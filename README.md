@@ -1,4 +1,7 @@
 # LavaClient
+![](https://jitpack.io/v/SamOphis/LavaClient.svg)
+
+(https://jitpack.io/#SamOphis/LavaClient)
 LavaClient is a fast client implementation for [Lavalink](https://github.com/Frederikam/Lavalink) written in Java 8, built from the ground up for speed, abstraction and ease-of-use. Although it can be used normally as is, since it lacks specific references to Java Discord API Libraries, certain things (such as channel objects, etc.) are not represented except for their numeric ID's.
 
 This is used in production along with a non-specific command library by [Kunou](https://github.com/SamOphis/Kunou). You must have more than "a ping-pong bot" experience/knowledge to properly use LavaClient.

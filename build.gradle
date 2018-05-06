@@ -1,12 +1,20 @@
 plugins {
     id 'java'
-    id 'application'
+    id 'maven'
     id 'com.github.johnrengelman.shadow' version '2.0.3'
 }
 
 group 'samophis'
-version 'v0.1'
-mainClassName = 'samophis.lavalink.client.test.Main'
+version '0.1.1'
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives sourcesJar
+}
 
 repositories {
     jcenter()
@@ -21,5 +29,4 @@ dependencies {
     compile group: 'io.sentry', name: 'sentry-logback', version: '1.7.3'
     compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
     compile 'com.sedmelluq:lavaplayer:1.2.63'
-
 }
