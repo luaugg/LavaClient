@@ -1,8 +1,8 @@
 package samophis.lavalink.client.entities.internal;
 
+import samophis.lavalink.client.entities.AudioNode;
+import samophis.lavalink.client.entities.LoadBalancer;
 import samophis.lavalink.client.entities.Statistics;
-import samophis.lavalink.client.entities.nodes.AudioNode;
-import samophis.lavalink.client.entities.nodes.LoadBalancer;
 
 /*
   Note: This uses the very same equations as described in Frederikam's original JDA Lavalink Client here:
@@ -18,6 +18,7 @@ import samophis.lavalink.client.entities.nodes.LoadBalancer;
 public class LoadBalancerImpl implements LoadBalancer {
     private final AudioNode node;
     private int playerPenalty, cpuPenalty, defFramePenalty, nullFramePenalty;
+    @SuppressWarnings("WeakerAccess")
     public LoadBalancerImpl(AudioNode node) {
         this.node = node;
     }

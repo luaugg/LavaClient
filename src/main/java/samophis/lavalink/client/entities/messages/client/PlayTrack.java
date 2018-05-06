@@ -5,17 +5,19 @@ import com.jsoniter.annotation.JsonUnwrapper;
 import com.jsoniter.output.JsonStream;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Objects;
 
 public class PlayTrack {
+    @SuppressWarnings("WeakerAccess")
     @JsonIgnore public final String guildId, startTime, endTime, track;
-    public PlayTrack(long guildId, @Nullable String startTime, @Nullable String endTime, @Nonnull String track) {
+    public PlayTrack(long guildId, long startTime, long endTime, @Nonnull String track) {
         Objects.requireNonNull(track);
+        if (endTime < startTime)
+            throw new IllegalArgumentException("Ending time cannot be smaller than starting time.");
         this.guildId = String.valueOf(guildId);
-        this.startTime = startTime == null ? "0" : startTime;
-        this.endTime = endTime;
+        this.startTime = startTime < 1 ? "0" : String.valueOf(startTime);
+        this.endTime = endTime == -1 ? null : String.valueOf(endTime);
         this.track = track;
     }
     @JsonUnwrapper

@@ -5,11 +5,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
-import samophis.lavalink.client.entities.AudioNodeEntry;
-import samophis.lavalink.client.entities.LavaClient;
-import samophis.lavalink.client.entities.LavaHttpManager;
-import samophis.lavalink.client.entities.LavaPlayer;
-import samophis.lavalink.client.entities.nodes.AudioNode;
+import samophis.lavalink.client.entities.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -17,6 +13,7 @@ import java.util.Map;
 
 public class LavaClientImpl implements LavaClient {
     public static final Map<String, AudioNode> NODES = new Object2ObjectOpenHashMap<>();
+    @SuppressWarnings("WeakerAccess")
     public static final Long2ObjectMap<LavaPlayer> PLAYERS = new Long2ObjectOpenHashMap<>();
     private final LavaHttpManager manager;
     private final String password;

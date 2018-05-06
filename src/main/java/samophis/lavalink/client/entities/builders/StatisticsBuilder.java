@@ -1,12 +1,20 @@
 package samophis.lavalink.client.entities.builders;
 
+import samophis.lavalink.client.entities.AudioNode;
 import samophis.lavalink.client.entities.Statistics;
 import samophis.lavalink.client.entities.internal.StatisticsImpl;
 
+import javax.annotation.Nonnull;
+import java.util.Objects;
+
 public class StatisticsBuilder {
+    private final AudioNode node;
     private int players, playingPlayers, free, used, allocated, reservable, cores, sent, nulled, deficit;
     private long uptime;
     private double systemLoad, lavalinkLoad;
+    public StatisticsBuilder(@Nonnull AudioNode node) {
+        this.node = Objects.requireNonNull(node);
+    }
     public StatisticsBuilder setPlayers(int players) {
         this.players = players;
         return this;
@@ -60,6 +68,6 @@ public class StatisticsBuilder {
         return this;
     }
     public Statistics build() {
-        return new StatisticsImpl(players, playingPlayers, free, used, allocated, reservable, cores, sent, nulled, deficit, uptime, systemLoad, lavalinkLoad);
+        return new StatisticsImpl(node, players, playingPlayers, free, used, allocated, reservable, cores, sent, nulled, deficit, uptime, systemLoad, lavalinkLoad);
     }
 }

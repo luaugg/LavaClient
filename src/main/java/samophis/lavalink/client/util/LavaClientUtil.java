@@ -17,9 +17,22 @@ import net.iharder.Base64;
 
 import java.io.IOException;
 
+/**
+ * Contains two utility methods used to convert to and from Lavaplayer AudioTracks.
+ *
+ * @author SamOphis
+ * @since 0.1
+ */
+
 public class LavaClientUtil {
     private static final AudioPlayerManager MANAGER = new DefaultAudioPlayerManager();
     private LavaClientUtil() {}
+
+    /**
+     * Converts a Lavaplayer AudioTrack into an encoded Base64 stream.
+     * @param track The Lavaplayer AudioTrack to convert.
+     * @return An encoded Base64 stream representing the AudioTrack.
+     */
     public static String fromAudioTrack(AudioTrack track) {
         String data;
         try {
@@ -31,6 +44,12 @@ public class LavaClientUtil {
         }
         return data;
     }
+
+    /**
+     * Converts an encoded Base64 stream into a Lavaplayer AudioTrack object.
+     * @param data The encoded Base64 stream.
+     * @return An AudioTrack object.
+     */
     public static AudioTrack toAudioTrack(String data) {
         AudioTrack track;
         try {

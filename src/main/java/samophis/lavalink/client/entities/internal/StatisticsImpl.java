@@ -1,14 +1,17 @@
 package samophis.lavalink.client.entities.internal;
 
+import samophis.lavalink.client.entities.AudioNode;
 import samophis.lavalink.client.entities.Statistics;
 
 public class StatisticsImpl implements Statistics {
+    private final AudioNode node;
     private final int players, playingPlayers, free, used, allocated, reservable, cores;
     private final long uptime;
     private final double systemLoad, lavalinkLoad;
     private final Frames frames;
-    public StatisticsImpl(int players, int playingPlayers, int free, int used, int allocated, int reservable, int cores, int sent, int nulled, int deficit,
+    public StatisticsImpl(AudioNode node, int players, int playingPlayers, int free, int used, int allocated, int reservable, int cores, int sent, int nulled, int deficit,
                           long uptime, double systemLoad, double lavalinkLoad) {
+        this.node = node;
         this.players = players;
         this.playingPlayers = playingPlayers;
         this.free = free;
@@ -20,6 +23,10 @@ public class StatisticsImpl implements Statistics {
         this.uptime = uptime;
         this.systemLoad = systemLoad;
         this.lavalinkLoad = lavalinkLoad;
+    }
+    @Override
+    public AudioNode getNode() {
+        return node;
     }
     @Override
     public int getPlayers() {

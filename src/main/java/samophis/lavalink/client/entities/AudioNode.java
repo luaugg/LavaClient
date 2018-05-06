@@ -1,9 +1,13 @@
-package samophis.lavalink.client.entities.nodes;
+package samophis.lavalink.client.entities;
 
 import com.neovisionaries.ws.client.WebSocket;
-import samophis.lavalink.client.entities.AudioNodeEntry;
-import samophis.lavalink.client.entities.LavaClient;
-import samophis.lavalink.client.entities.Statistics;
+
+/**
+ * Represents a remote, independent audio-sending node running Lavalink-Server.
+ *
+ * @since 0.1
+ * @author SamOphis
+ */
 
 public interface AudioNode {
     LavaClient getClient();
