@@ -1,6 +1,5 @@
 # LavaClient
-![](https://jitpack.io/v/SamOphis/LavaClient.svg)
-(https://jitpack.io/#SamOphis/LavaClient)
+[![](https://jitpack.io/v/SamOphis/LavaClient.svg)](https://jitpack.io/#SamOphis/LavaClient)
 
 LavaClient is a fast, nearly-fully-documented client implementation for [Lavalink](https://github.com/Frederikam/Lavalink) written in Java 8, built from the ground up for speed, abstraction and ease-of-use. Although it can be used normally as is, since it lacks specific references to Java Discord API Libraries, certain things (such as channel objects, etc.) are not represented except for their numeric ID's.
 
