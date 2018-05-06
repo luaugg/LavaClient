@@ -79,6 +79,13 @@ public interface Statistics {
      * @return <b>possibly-null</b> Frames information.
      */
     Frames getFrames();
+
+    /**
+     * Represents the <b>possibly-null</b> frame statistics provided every minute by the Lavalink-Server.
+     *
+     * @author SamOphis
+     * @since 0.1
+     */
     interface Frames {
         /**
          * Fetches the average amount of frames sent per minute, <b>zero-if-null</b>.

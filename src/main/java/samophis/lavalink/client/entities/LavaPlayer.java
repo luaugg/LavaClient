@@ -7,6 +7,14 @@ import samophis.lavalink.client.entities.events.PlayerEvent;
 import javax.annotation.Nonnull;
 import java.util.List;
 
+/**
+ * Represents a Guild-specific player instance similar to the default Lavalink Client's Link + IPlayer classes.
+ * <br><p>This is the second most important class in LavaClient after, well, LavaClient, and controls all playback/update methods + more.</p>
+ *
+ * @author SamOphis
+ * @since 0.1
+ */
+
 public interface LavaPlayer {
     /**
      * Fetches the {@link AudioNode AudioNode} this player will attempt to send data to.
