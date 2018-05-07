@@ -15,5 +15,6 @@ public interface AudioNode {
     LoadBalancer getBalancer();
     Statistics getStatistics();
     AudioNodeEntry getEntry();
+    @SuppressWarnings("all")
     boolean isAvailable();
 }

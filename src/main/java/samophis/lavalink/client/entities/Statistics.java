@@ -7,6 +7,7 @@ package samophis.lavalink.client.entities;
  * @since 0.1
  */
 
+@SuppressWarnings("unused")
 public interface Statistics {
     /**
      * Fetches the {@link AudioNode AudioNode} connected to this Statistics object.

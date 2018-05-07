@@ -1,8 +1,6 @@
 package samophis.lavalink.client.entities;
 
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * This class is the manager which allows LavaClient to send requests to get information from a track for use in both the client and the server.
@@ -22,7 +20,7 @@ public interface LavaHttpManager {
      * Sends a request to the {@link AudioNode AudioNode} with the least load on it to get back the AudioTrack.
      * <br><p>This sends back both the data of the AudioTrack and its encoded representation, for use in playing tracks.</p>
      * @param identifier The identifier of the source to be played -- automatically URL-Encoded.
-     * @param callback The callback fired upon a successful response. The first parameter is the encoded track and the second is the AudioTrack itself.
+     * @param callback The callback fired upon a successful response. The {@link TrackPair TrackPair} contains the encoded track data and the track itself.
      */
-    void resolveTrack(String identifier, BiConsumer<String, AudioTrack> callback);
+    void resolveTrack(String identifier, Consumer<TrackPair> callback);
 }

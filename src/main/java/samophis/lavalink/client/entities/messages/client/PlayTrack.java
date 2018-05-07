@@ -13,10 +13,10 @@ public class PlayTrack {
     @JsonIgnore public final String guildId, startTime, endTime, track;
     public PlayTrack(long guildId, long startTime, long endTime, @Nonnull String track) {
         Objects.requireNonNull(track);
-        if (endTime < startTime)
+        if (endTime < startTime && endTime != -1)
             throw new IllegalArgumentException("Ending time cannot be smaller than starting time.");
         this.guildId = String.valueOf(guildId);
-        this.startTime = startTime < 1 ? "0" : String.valueOf(startTime);
+        this.startTime = startTime < 1 ? null : String.valueOf(startTime);
         this.endTime = endTime == -1 ? null : String.valueOf(endTime);
         this.track = track;
     }
@@ -28,9 +28,11 @@ public class PlayTrack {
         stream.writeObjectField("guildId");
         stream.writeVal(guildId);
         stream.writeMore();
-        stream.writeObjectField("startTime");
-        stream.writeVal(startTime);
-        stream.writeMore();
+        if (startTime != null) {
+            stream.writeObjectField("startTime");
+            stream.writeVal(startTime);
+            stream.writeMore();
+        }
         if (endTime != null) {
             stream.writeObjectField("endTime");
             stream.writeVal(endTime);

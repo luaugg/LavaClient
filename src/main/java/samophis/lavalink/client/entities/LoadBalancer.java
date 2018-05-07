@@ -7,6 +7,7 @@ package samophis.lavalink.client.entities;
  * @author SamOphis
  */
 
+@SuppressWarnings("unused")
 public interface LoadBalancer {
     /**
      * Fetches The {@link AudioNode AudioNode} attached to this LoadBalancer.

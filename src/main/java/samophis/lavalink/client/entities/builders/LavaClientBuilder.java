@@ -16,22 +16,32 @@ import java.util.Objects;
 
 public class LavaClientBuilder {
     private final List<AudioNodeEntry> entries;
+    private final long expireWriteMs, expireAccessMs;
     private String password;
     private int restPort, wsPort, shards;
     private long userId;
-    public LavaClientBuilder(boolean overrideJson) {
-        /* -- override json refers to lavaclient setting jsoniter's (de)serialization to javassist, causing immensely faster speeds -- */
+    public LavaClientBuilder(boolean overrideJson, long expireWriteMs, long expireAccessMs) {
         if (overrideJson) {
             JsonIterator.setMode(DecodingMode.DYNAMIC_MODE_AND_MATCH_FIELD_WITH_HASH);
             JsonStream.setMode(EncodingMode.DYNAMIC_MODE);
         }
-        /* -- default lavalink credentials, PLEASE change if one of your lavalink nodes is exposed to the public or if it uses the default, global credentials -- */
-        /* -- if you don't, your nodes could be abused by other people -- */
+        this.expireWriteMs = expireWriteMs;
+        this.expireAccessMs = expireAccessMs;
         this.entries = new ObjectArrayList<>();
         this.password = LavaClient.PASSWORD_DEFAULT;
         this.restPort = LavaClient.REST_PORT_DEFAULT;
         this.wsPort = LavaClient.WS_PORT_DEFAULT;
     }
+    public LavaClientBuilder(long expireWriteMs, long expireAccessMs) {
+        this(true, expireWriteMs, expireAccessMs);
+    }
+    public LavaClientBuilder(boolean overrideJson) {
+        this(overrideJson, LavaClient.DEFAULT_CACHE_EXPIRE_WRITE, LavaClient.DEFAULT_CACHE_EXPIRE_ACCESS);
+    }
+    public LavaClientBuilder() {
+        this(true);
+    }
+
     public LavaClientBuilder addEntry(@Nonnull AudioNodeEntry entry) {
         Objects.requireNonNull(entry);
         if (entry.getServerAddress() == null || entry.getServerAddress().isEmpty())
@@ -69,6 +79,6 @@ public class LavaClientBuilder {
         return this;
     }
     public LavaClient build() {
-        return new LavaClientImpl(password, restPort, wsPort, shards, userId, entries);
+        return new LavaClientImpl(password, restPort, wsPort, shards, expireWriteMs, expireAccessMs, userId, entries);
     }
 }

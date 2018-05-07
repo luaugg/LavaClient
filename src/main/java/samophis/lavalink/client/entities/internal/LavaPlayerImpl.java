@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import samophis.lavalink.client.entities.AudioNode;
 import samophis.lavalink.client.entities.LavaClient;
 import samophis.lavalink.client.entities.LavaPlayer;
+import samophis.lavalink.client.entities.TrackPair;
 import samophis.lavalink.client.entities.events.*;
 import samophis.lavalink.client.entities.messages.client.*;
 import samophis.lavalink.client.exceptions.ListenerException;
@@ -63,7 +64,6 @@ public class LavaPlayerImpl implements LavaPlayer {
         return paused
                 ? Math.min(position, track.getDuration())
                 : Math.min(position + (System.currentTimeMillis() - timestamp), track.getDuration());
-
     }
     @Override
     public long getTimestamp() {
@@ -116,21 +116,26 @@ public class LavaPlayerImpl implements LavaPlayer {
     public void playTrack(@Nonnull AudioTrack track, long startTime, long endTime) {
         this.track = Objects.requireNonNull(track);
         setNode(LavaClient.getBestNode());
-        String text = JsonStream.serialize(new PlayTrack(guild_id, startTime, endTime, LavaClientUtil.fromAudioTrack(track)));
-        node.getSocket().sendText(text);
+        TrackPair cached = client.getIdentifierCache().get(track.getIdentifier(), ignored -> new TrackPair(LavaClientUtil.fromAudioTrack(track), track));
+        if (cached == null)
+            cached = new TrackPair(LavaClientUtil.fromAudioTrack(track), track);
+        String text = JsonStream.serialize(new PlayTrack(guild_id, startTime, endTime, cached.getTrackData()));
         TrackStartEvent start = new TrackStartEvent(this, track);
+        node.getSocket().sendText(text);
         emitEvent(start);
     }
     @Override
     public void playTrack(@Nonnull String identifier, long startTime, long endTime) {
-        client.getHttpManager().resolveTrack(Objects.requireNonNull(identifier), (tr, track) -> {
-            this.track = track;
-            setNode(LavaClient.getBestNode());
-            String text = JsonStream.serialize(new PlayTrack(guild_id, startTime, endTime, tr));
-            node.getSocket().sendText(text);
-            TrackStartEvent start = new TrackStartEvent(this, track);
-            emitEvent(start);
-        });
+        TrackPair pair = client.getIdentifierCache().getIfPresent(Objects.requireNonNull(identifier));
+        if (pair == null) {
+            client.getHttpManager().resolveTrack(identifier, trackPair -> {
+                client.getIdentifierCache().put(identifier, trackPair);
+                handleTrackPair(trackPair, startTime, endTime);
+            });
+        }
+        else {
+            handleTrackPair(pair, startTime, endTime);
+        }
     }
     @Override
     public void stopTrack() {
@@ -175,6 +180,7 @@ public class LavaPlayerImpl implements LavaPlayer {
         this.position = position;
         return this;
     }
+    @SuppressWarnings("all")
     public LavaPlayerImpl setTimestamp(long timestamp) {
         this.timestamp = timestamp;
         return this;
@@ -183,8 +189,16 @@ public class LavaPlayerImpl implements LavaPlayer {
         this.track = track;
         return this;
     }
+    @SuppressWarnings("unused")
     public LavaPlayerImpl setChannelId(long channel_id) {
         this.channel_id = channel_id;
         return this;
+    }
+    private void handleTrackPair(TrackPair pair, long start, long end) {
+        String data = JsonStream.serialize(new PlayTrack(guild_id, start, end, pair.getTrackData()));
+        TrackStartEvent event = new TrackStartEvent(this, pair.getTrack());
+        setNode(LavaClient.getBestNode());
+        node.getSocket().sendText(data);
+        emitEvent(event);
     }
 }

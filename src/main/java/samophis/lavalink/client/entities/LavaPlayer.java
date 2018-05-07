@@ -15,6 +15,7 @@ import java.util.List;
  * @since 0.1
  */
 
+@SuppressWarnings("unused")
 public interface LavaPlayer {
     /**
      * Fetches the {@link AudioNode AudioNode} this player will attempt to send data to.
@@ -88,7 +89,7 @@ public interface LavaPlayer {
     /**
      * Plays a track using the best, available {@link AudioNode AudioNode}.
      * <br><p>Note: Playing an AudioTrack directly saves a little bit of latency but also puts more load on the client and forces you to implement Lavaplayer on a wider scale.
-     * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via a track. Both work perfectly.</p>
+     * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via a track. Both work perfectly and all methods do cache, removing some latency/load.</p>
      * @throws NullPointerException If the provided AudioTrack is null.
      * @param track The <b>non-null</b> track to play.
      */
@@ -97,7 +98,7 @@ public interface LavaPlayer {
     /**
      * Plays a track using the best, available {@link AudioNode AudioNode}.
      * <br><p>Note: Playing an AudioTrack directly saves a little bit of latency but also puts more load on the client and forces you to implement Lavaplayer on a wider scale.
-     * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via track. Both work perfectly.</p>
+     * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via track. Both work perfectly and all methods do cache, removing some latency/load.</p>
      * @throws NullPointerException If the provided AudioTrack is null.
      * @throws IllegalArgumentException If the ending time is smaller than the starting time.
      * @param track The <b>non-null</b> AudioTrack to play.
@@ -109,7 +110,7 @@ public interface LavaPlayer {
     /**
      * Plays a track using the best, available {@link AudioNode AudioNode}.
      * <br><p>Note: Playing a track via an identifier adds a little bit of latency but also puts less load on the client and removes the need to implement Lavaplayer more widely.
-     * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via a track. Both work perfectly.</p>
+     * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via a track. Both work perfectly and all methods do cache, removing some latency/load.</p>
      * @throws NullPointerException If the provided identifier is null.
      * @param identifier The <b>non-null</b> identifier from which to load an AudioTrack.
      */
@@ -118,7 +119,7 @@ public interface LavaPlayer {
     /**
      * Plays a track using the best, available {@link AudioNode AudioNode}.
      * <br><p>Note: Playing a track via an identifier adds a little bit of latency but also puts less load on the client and removes the need to implement Lavaplayer more widely.
-     * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via a track. Both work perfectly.</p>
+     * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via a track. Both work perfectly and all methods do cache, removing some latency/load..</p>
      * @throws NullPointerException If the provided identifier is null.
      * @throws IllegalArgumentException If the ending time is smaller than the starting time.
      * @param identifier The <b>non-null</b> identifier from which to load an AudioTrack.
@@ -158,7 +159,7 @@ public interface LavaPlayer {
     void setVolume(int volume);
 
     /**
-     * Sets the node to connect and send data to. This will automatically destroy the player and disconnect it from the old node, if it exists (but maintain state).
+     * Sets the node to connect and send data to.
      * @throws NullPointerException If the {@link AudioNode node} provided is null.
      * @param node the <b>non-null</b> {@link AudioNode AudioNode} to connect and send data to.
      */
