@@ -104,13 +104,15 @@ public interface LavaClient {
         int record = Integer.MAX_VALUE;
         for (AudioNode nd : LavaClientImpl.NODES.values()) {
             int penalty = ((LoadBalancerImpl) nd.getBalancer()).initWithNode().getTotalPenalty();
-            if (penalty < record && nd.isAvailable()) {
+            if (penalty < record) {
                 node = nd;
                 record = penalty;
             }
         }
         if (node == null)
             throw new IllegalStateException("No available Lavalink nodes!");
+        if (!node.isAvailable())
+            throw new IllegalStateException("Lavalink node wasn't available!");
         return node;
     }
 }
