@@ -2,3 +2,5 @@
 .gradle/
 build/
 LavaClient.iml
+
+gradle/wrapper/gradle-wrapper.properties
