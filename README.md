@@ -1,11 +1,23 @@
 # LavaClient
 [![](https://jitpack.io/v/SamOphis/LavaClient.svg)](https://jitpack.io/#SamOphis/LavaClient)
 
-LavaClient is a fast, nearly-fully-documented client implementation for [Lavalink](https://github.com/Frederikam/Lavalink) written in Java 8, built from the ground up for speed, abstraction and ease-of-use. Although it can be used normally as is, since it lacks specific references to Java Discord API Libraries, certain things (such as channel objects, etc.) are not represented except for their numeric ID's.
+LavaClient is a fast client implementation for [Lavalink](https://github.com/Frederikam/Lavalink) written in Java 8, built from the ground up for speed, abstraction and ease-of-use. Although it can be used normally as is, since it lacks specific references to Java Discord API Libraries, certain things (such as channel objects, etc.) are not represented except for their numeric ID's.
 
 This is used in production along with a non-specific command library by [Kunou](https://github.com/SamOphis/Kunou). You must have more than "a ping-pong bot" experience/knowledge to properly use LavaClient.
 
 Implementations that extend LavaClient in order to make it easier for certain Java Discord Libraries like [JDA](https://github.com/DV8FromTheWorld/JDA), [Discord4J](https://github.com/austinv11/Discord4J), or [Javacord](https://github.com/BtoBastian/Javacord]) will be listed below this message upon request and reviewal.
+
+### Why choose LavaClient?
+
+LavaClient is built using much of the same logic found in the default [Lavalink JDA Client](https://github.com/Frederikam/Lavalink/tree/master/LavalinkClient) and uses many faster dependencies in order to ensure speed. Identifiers, the data they encode into and the actual `AudioTrack` itself are cached with [Caffeine](https://github.com/ben-manes/caffeine) and expire [15 minutes after the latest access and 20 minutes after the initial write](https://github.com/SamOphis/LavaClient/blob/master/src/main/java/samophis/lavalink/client/entities/LavaClient.java#L26), meaning memory is used efficiently (and both of these values can be modified).
+
+The load balancing equations are the [same as those used in the JDA Client and thus guarantee at least the same degree of load balancing between nodes](https://github.com/SamOphis/LavaClient/blob/master/src/main/java/samophis/lavalink/client/entities/internal/LoadBalancerImpl.java#L51). Additionally, with no dependencies on any Discord API Library and easy-to-read abstractions, you can easily extend LavaClient to make it even more intuitive for beginners of certain Discord Libraries.
+
+JSON Encoding/Decoding, HTTP Requests, WebSocket Connections to Audio Nodes, the Caching of Operations, etc. are all optimized to make sure that no extra resources are wasted. Not only that but the project structure is very simple to wrap your head around, the main files have been documented fully and the coding style isn't too cluttered, making contributions or readings very easy.
+
+All of this wasn't built for no reason -- it was built by me to easily integrate with my [Kunou](https://github.com/SamOphis/Kunou) bot which also uses no Discord API Libraries, meaning the foundations of the project itself are *built to be able to integrate easily*. The same is true if you're using a Discord API Library too as LavaClient, again, has no breaking dependencies.
+
+**However: Since abstraction is favoured, LavaClient has no way at all of handling the rate limits of different libraries, so you *must* either take advantage of your library's rate limiting or handle it yourself**. An easy example of how to handle this being used in production by Kunou can be found [here](https://hastebin.com/yizimekeqo.java).
 
 # Building a LavaClient
 
