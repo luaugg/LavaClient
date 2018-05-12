@@ -3,7 +3,7 @@
 
 LavaClient is a fast client implementation for [Lavalink](https://github.com/Frederikam/Lavalink) written in Java 8, built from the ground up for speed, abstraction and ease-of-use. Although it can be used normally as is, since it lacks specific references to Java Discord API Libraries, certain things (such as channel objects, etc.) are not represented except for their numeric ID's.
 
-This is used in production along with a non-specific command library by [Kunou](https://github.com/SamOphis/Kunou). You must have more than "a ping-pong bot" experience/knowledge to properly use LavaClient.
+This is used in production along with a non-specific command library by my [Kunou](https://github.com/KunouMain) project. You must have more than "a ping-pong bot" experience/knowledge to properly use LavaClient.
 
 Implementations that extend LavaClient in order to make it easier for certain Java Discord Libraries like [JDA](https://github.com/DV8FromTheWorld/JDA), [Discord4J](https://github.com/austinv11/Discord4J), or [Javacord](https://github.com/BtoBastian/Javacord]) will be listed below this message upon request and reviewal.
 
@@ -82,7 +82,7 @@ player.getConnectedNode().getSocket().sendText(data);
 
 This will establish a voice connection to the `AudioNode`, and will then allow you to play songs. Once connected, you can use the `LavaPlayer#playTrack` methods to play songs from YouTube, Soundcloud, Bandcamp, etc.
 
-> Note: Playing songs via an identifier has slightly higher latency than playing songs via a Lavaplayer `AudioTrack`, however it also puts slightly less stuff on the bot. This design choice is up to the reader.
+> Note: Playing songs via an identifier has slightly higher latency than playing songs via a Lavaplayer `AudioTrack`, however it also puts slightly less stuff on the bot. This design choice is up to the reader. In all cases, as of v0.2, LavaClient will (by default) cache results in order to cut this down. With default settings, entries expire 15 minutes after latest access and 20 minutes after the initial write, although these can be configured by specifying the parameters in the `LavaClientBuilder` constructor.
 
 ## Adding Listeners
 
