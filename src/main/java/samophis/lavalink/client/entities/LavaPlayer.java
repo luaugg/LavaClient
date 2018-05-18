@@ -154,6 +154,7 @@ public interface LavaPlayer {
 
     /**
      * Sets the volume of playback.
+     * <br><p>Note: If the provided volume is negative or over 150, this method will return early instead of sending a volume update.</p>
      * @param volume The volume to set playback to, automatically bounded from 0 to 150 inclusive.
      */
     void setVolume(int volume);

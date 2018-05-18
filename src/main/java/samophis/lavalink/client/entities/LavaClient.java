@@ -70,20 +70,22 @@ public interface LavaClient {
     /**
      * Fetches the amount of time from which track data will be removed from the cache after being written without being accessed.
      * <br><p>When a song loads, LavaClient caches the initial loading data temporarily so that the server nor the client have to re-load it for a certain period of time.
-     * <br>This value tells LavaClient how long to wait after data is written before it is removed, ignoring the access of the data (@see #getCacheExpireAfterAccessMs}.
+     * <br>This value tells LavaClient how long to wait after data is written before it is removed, ignoring the access of the data.
      * <br>If the data is not removed, memory usage will keep on going up which is bad for big bots or small bots on limited hardware.
      * <br><br>This value equates to {@value DEFAULT_CACHE_EXPIRE_WRITE} milliseconds if it isn't manually specified during construction of the client.</p>
      * @return The amount of time to wait to remove cached track data after it is initially written.
+     * @see LavaClient#getCacheExpireAfterAccessMs()
      */
     long getCacheExpireAfterWriteMs();
 
     /**
      * Fetches the amount of time from which track data will removed from the cache after being accessed (after being written).
      * <br><p>When a song loads, LavaClient caches the initial loading data temporarily so that the server nor the client have to re-load it for a certain period of time.
-     * <br>This value tells LavaClient how long to wait after data is accessed before it is removed, ignoring the writing of the data {@see #getCacheExpireAfterWriteMs}.
+     * <br>This value tells LavaClient how long to wait after data is accessed before it is removed, ignoring the writing of the data.
      * <br>If the data is not removed, memory usage will slowly creep up which is bad for big bots or small bots on limited hardware.
      * <br><br>This value equates to {@value DEFAULT_CACHE_EXPIRE_ACCESS} milliseconds if it isn't manually specified during construction of the client.</p>
      * @return The amount of time to wait to remove cached track data after it is accessed.
+     * @see LavaClient#getCacheExpireAfterWriteMs()
      */
 
     long getCacheExpireAfterAccessMs();

@@ -100,7 +100,8 @@ public class LavaPlayerImpl implements LavaPlayer {
     }
     @Override
     public void setVolume(int volume) {
-        volume = Math.min(0, Math.max(150, volume));
+        if (volume < 0 || volume > 150)
+            return;
         node.getSocket().sendText(JsonStream.serialize(new SetVolume(guild_id, volume)));
         this.volume = volume;
     }
