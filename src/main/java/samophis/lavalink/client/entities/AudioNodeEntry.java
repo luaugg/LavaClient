@@ -18,9 +18,33 @@ public interface AudioNodeEntry {
 
     /**
      * Fetches the server address of the associated {@link AudioNode AudioNode}.
+     * <br><p>Deprecated as of 19th May 2018 -- this defaults to the address returned by {@link AudioNodeEntry#getRawAddress()} now.
+     * <b>Due to be removed upon the next minor version update.</b>
+     * <br>Use {@link AudioNodeEntry#getRawAddress()} now to avoid compile errors upon the next update.</p>
      * @return The server address of the {@link AudioNode AudioNode} this entry represents.
+     * @see #getRawAddress()
      */
-    String getServerAddress();
+    @Deprecated String getServerAddress();
+
+    /**
+     * Fetches the server address of the {@link AudioNode AudioNode} this entry represents,
+     * as provided by the user through an {@link samophis.lavalink.client.entities.builders.AudioNodeEntryBuilder AudioNodeEntryBuilder}.
+     * @return The raw server address of the {@link AudioNode AudioNode} this entry represents.
+     */
+    String getRawAddress();
+
+    /**
+     * Fetches the HTTP address of the {@link AudioNode AudioNode} this entry represents, as used by the {@link LavaHttpManager LavaHttpManager} class.
+     * @return The HTTP address of the {@link AudioNode AudioNode} this entry represents, with a default {@code 'http://'} scheme if not already provided.
+     */
+    String getHttpAddress();
+
+    /**
+     * Fetches the WebSocket address (with the {@code 'ws://'} scheme) of the {@link AudioNode AudioNode} this entry represents.
+     * <br><p>This value cannot be specified manually -- it is constructed from the original server address passed to LavaClient.</p>
+     * @return The WebSocket address of the {@link AudioNode AudioNode} this entry represents.
+     */
+    String getWebSocketAddress();
 
     /**
      * Fetches the password of the associated {@link AudioNode AudioNode}.

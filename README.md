@@ -15,9 +15,9 @@ The load balancing equations are the [same as those used in the JDA Client and t
 
 JSON Encoding/Decoding, HTTP Requests, WebSocket Connections to Audio Nodes, the Caching of Operations, etc. are all optimized to make sure that no extra resources are wasted. Not only that but the project structure is very simple to wrap your head around, the main files have been documented fully and the coding style isn't too cluttered, making contributions or readings very easy.
 
-All of this wasn't built for no reason -- it was built by me to easily integrate with my [Kunou](https://github.com/SamOphis/Kunou) bot which also uses no Discord API Libraries, meaning the foundations of the project itself are *built to be able to integrate easily*. The same is true if you're using a Discord API Library too as LavaClient, again, has no breaking dependencies.
+All of this wasn't built for no reason -- it was built by me to easily integrate with my [Kunou](https://github.com/KunouMain/KunouBot) bot which also uses no Discord API Libraries, meaning the foundations of the project itself are *built to be able to integrate easily*. The same is true if you're using a Discord API Library too as LavaClient, again, has no breaking dependencies.
 
-**However: Since abstraction is favoured, LavaClient has no way at all of handling the rate limits of different libraries, so you *must* either take advantage of your library's rate limiting or handle it yourself**. An easy example of how to handle this being used in production by Kunou can be found [here](https://hastebin.com/yizimekeqo.java).
+**However: Since abstraction is favoured, LavaClient has no way at all of handling the rate limits of different libraries, so you *must* either take advantage of your library's rate limiting or handle it yourself**. An easy example of how to handle this being used in production by Kunou can be found [here](https://gist.github.com/SamOphis/766c62d6fb91bac77ea9f2dea0edb330).
 
 # Building a LavaClient
 
@@ -34,7 +34,7 @@ LavaClient client = new LavaClientBuilder(true)
         .setUserId(bot_user_id)
         .build();
 client.addEntry(new AudioNodeEntryBuilder(client)
-        .setAddress("http://localhost")
+        .setAddress("localhost")
         .build());
 ```
 
@@ -43,7 +43,6 @@ client.addEntry(new AudioNodeEntryBuilder(client)
 - `bot_shard_count` is the number of shards your bot uses (1+). This value can be hardcoded or requested via an API call to `/gateway/bot`.
 - `bot_user_id` is the User ID of the Bot User this `LavaClient` is associated with. This value can be hardcoded or requested via an API call to `/users/@me`.
 - `AudioNode` entries are added after building a `LavaClient` since they rely on the default values specified in an `LavaClient` instance.
-- `http://localhost` has a `http://` in front of it due to Apache HttpAsyncClient not liking the absence of a HTTP scheme. This is replaced with a `wss://` when connecting to an `AudioNode`.
 
 # Interacting with LavaClient
 
@@ -69,9 +68,24 @@ To connect to a voice channel, you must send an `OP 4 Voice State Update` to Dis
 }
 ```
 
-Once sent, wait (preferably asynchronously) to receive the `VOICE_STATE_UPDATE` and `VOICE_SERVER_UPDATE` events. The first contains the voice state needed to obtain the `session_id`, and the second contains the `token` and the `endpoint` strings. With the information from both of these events, you can then send a `voiceUpdate` to the best `AudioNode` using this code:
+Once sent, wait for the incoming `VOICE_STATE_UPDATE` and `VOICE_SERVER_UPDATE` events with your library. It's much better to do this asynchronously, reading messages on a different thread, etc. LavaClient has a class for this (starting from v0.2.2) called `EventWaiter` which takes some of this responsibility away from the end-user.
+It has two setters for users to set the Session ID, Voice Token and Voice Server Endpoint from the received events and only connects when the necessary state has been fully filled out, never pausing any thread to wait.
+
+The user still has to set the information in the first place, but the `EventWaiter` class handles the inconsistency of Discord Events without causing a Thread to sleep and hides away the connection logic, making it easier to connect to an AudioNode. Below are two examples -- one using the `EventWaiter` class and one without.
 
 ```java
+// With the EventWaiter
+// Creates an EventWaiter using the AudioNode with the least load on it and the associated Guild ID.
+// You can also specify an AudioNode manually with the overload .from(AudioNode, long)
+EventWaiter waiter = EventWaiter.from(guild_id);
+waiter.setSessionIdAndTryConnect(session_id); // Sets the Session ID and connects ONLY if the Token and Endpoint have already been set.
+waiter.setServerAndTryConnect(voice_token, endpoint); // Sets the Token and Endpoint and connects ONLY if the Session ID has already been set.
+```
+
+```java
+// Without the EventWaiter
+// You need to retrieve the Session ID, Voice Token, Server Endpoint and a Guild ID here.
+// Discord Events are not guaranteed to even be sent at all, let alone in the right order.
 LavaPlayer player = client.getPlayerByGuildId(guild_id);
 player.setNode(LavaClient.getBestNode());
 
@@ -79,6 +93,8 @@ VoiceUpdate update = new VoiceUpdate(guild_id, session_id, token, endpoint);
 String data = JsonStream.serialize(update);
 player.getConnectedNode().getSocket().sendText(data);
 ```
+
+Both examples function exactly the same, except the second relies on much more user input to work even in the slightest. It's up to you which option you choose and neither has a noticeable impact on performance.
 
 This will establish a voice connection to the `AudioNode`, and will then allow you to play songs. Once connected, you can use the `LavaPlayer#playTrack` methods to play songs from YouTube, Soundcloud, Bandcamp, etc.
 

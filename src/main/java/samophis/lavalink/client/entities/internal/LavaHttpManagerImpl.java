@@ -46,7 +46,7 @@ public class LavaHttpManagerImpl implements LavaHttpManager {
             throw new HttpRequestException(exc);
         }
         AudioNodeEntry node = LavaClient.getBestNode().getEntry();
-        HttpGet request = new HttpGet(node.getServerAddress() + ":" + node.getRestPort() + "/loadtracks?identifier=" + identifier);
+        HttpGet request = new HttpGet(node.getHttpAddress() + ":" + node.getRestPort() + "/loadtracks?identifier=" + identifier);
         request.addHeader("Authorization", node.getPassword());
         http.execute(request, new FutureCallback<HttpResponse>() {
             @Override

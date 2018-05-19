@@ -38,7 +38,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         this.reconnectInterval = new AtomicInteger(1000);
         try {
             this.socket = new WebSocketFactory()
-                    .createSocket("ws://" + entry.getServerAddress().replaceAll("https?://", "") + ":" + entry.getWebSocketPort())
+                    .createSocket(entry.getWebSocketAddress() + ":" + entry.getWebSocketPort())
                     .addListener(this)
                     .addHeader("Authorization", entry.getPassword())
                     .addHeader("Num-Shards", String.valueOf(client.getShardCount()))
@@ -65,7 +65,6 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
     }
     @Override
     public void onConnected(WebSocket websocket, Map<String, List<String>> headers) {
-        LOGGER.debug("Connected.");
         client.getPlayers().forEach(player -> {
             if (player.getConnectedNode() == null)
                 player.setNode(this);
@@ -85,7 +84,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
                 LOGGER.info("Lavalink-Server ({}:{}) closed the connection gracefully with the reason: {}", entry.getServerAddress(), entry.getWebSocketPort(), reason);
             else {
                 LOGGER.warn("Lavalink-Server ({}:{}) closed the connection unexpectedly with the reason: {}", entry.getServerAddress(), entry.getWebSocketPort(), reason);
-                int time = reconnectInterval.getAndSet(Math.max(reconnectInterval.get() * 2, 64000));
+                int time = reconnectInterval.getAndSet(Math.min(reconnectInterval.get() * 2, 64000));
                 try {
                     Thread.sleep(time);
                 } catch (InterruptedException exc) {
