@@ -127,3 +127,5 @@ Additionally, LavaClient was built from the ground up with Sentry Logback loggin
 # Contributions
 
 Contributions are always welcome as long as they've been tested for at least a few hours (preferably a day) continuously and match the general coding style used in this project. Simply open a pull request and wait for it to be approved!
+
+Check out the [full guidelines here!](https://github.com/SamOphis/LavaClient/blob/master/CONTRIBUTING.md)
