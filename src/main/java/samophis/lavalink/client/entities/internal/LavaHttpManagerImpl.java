@@ -94,15 +94,25 @@ public class LavaHttpManagerImpl implements LavaHttpManager {
                 }
                 if (content == null)
                     throw new HttpRequestException("Lavalink Server returned no data!");
-                TrackLoadResult res = JsonIterator.deserialize(content, TrackLoadResult.class);
-                List<TrackDataPair> pairs = new ObjectArrayList<>(res.tracks.length);
-                for (TrackLoadResultObject obj : res.tracks)
-                    pairs.add(new TrackDataPairImpl(obj.track));
-                Integer selected = res.selectedTrack;
-                TrackDataPair selectedPair = null;
-                if (selected != null && selected < pairs.size())
-                    selectedPair = pairs.get(selected);
-                AudioWrapper wrapper = new AudioWrapperImpl(res.playlistName, selectedPair, pairs, res.isPlaylist);
+                AudioWrapper wrapper;
+                if (node.isUsingLavalinkVersionThree()) {
+                    TrackLoadResult res = JsonIterator.deserialize(content, TrackLoadResult.class);
+                    List<TrackDataPair> pairs = new ObjectArrayList<>(res.tracks.length);
+                    for (TrackLoadResultObject obj : res.tracks)
+                        pairs.add(new TrackDataPairImpl(obj.track));
+                    Integer selected = res.selectedTrack;
+                    TrackDataPair selectedPair = null;
+                    if (selected != null && selected < pairs.size())
+                        selectedPair = pairs.get(selected);
+                    wrapper = new AudioWrapperImpl(res.playlistName, selectedPair, pairs, res.isPlaylist);
+                }
+                else {
+                    TrackLoadResultObject[] objects = JsonIterator.deserialize(content, TrackLoadResultObject[].class);
+                    List<TrackDataPair> pairs = new ObjectArrayList<>(objects.length);
+                    for (TrackLoadResultObject obj : objects)
+                        pairs.add(new TrackDataPairImpl(obj.track));
+                    wrapper = new AudioWrapperImpl(null, null, pairs, false);
+                }
                 callback.accept(wrapper);
             }
             @Override

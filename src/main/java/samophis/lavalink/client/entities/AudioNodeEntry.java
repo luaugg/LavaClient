@@ -82,4 +82,11 @@ public interface AudioNodeEntry {
      */
     @Nonnegative
     int getRestPort();
+
+    /**
+     * Returns whether or not the {@link AudioNode AudioNode} this entry represents is running Lavalink Server v3.
+     * <br><p>If this value is true, any {@link AudioWrapper AudioWrapper} returned from loading tracks will be missing everything besides the track list.</p>
+     * @return Whether or not this node is running Lavalink Server v3.
+     */
+    boolean isUsingLavalinkVersionThree();
 }

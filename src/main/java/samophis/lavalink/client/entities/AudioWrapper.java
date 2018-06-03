@@ -31,13 +31,14 @@ import java.util.List;
 public interface AudioWrapper {
     /**
      * Determines whether or not the loaded tracks are the contents of a playlist or simply a search result.
+     * <br><p><b>Note: This WILL RETURN FALSE ALL THE TIME if the used {@link AudioNode AudioNode} is running Lavalink Server v2 (NOT v3).</b></p>
      * @return Whether the result was from a playlist or a search.
      */
     boolean isPlaylist();
 
     /**
      * Returns the <b>possibly-null</b> name of the playlist this object wraps.
-     * <br><p>Note: This may return {@code null} if this object does <b>NOT</b> wrap a playlist.</p>
+     * <br><p>Note: This may return {@code null} if this object does <b>NOT</b> wrap a playlist or if the used {@link AudioNode AudioNode} is running Lavalink Server v2.</p>
      * @return The <b>possibly-null</b> name of the playlist this object represents.
      */
     @Nullable
@@ -45,7 +46,7 @@ public interface AudioWrapper {
 
     /**
      * Returns the <b>possibly-null</b> {@link TrackDataPair TrackDataPair} resembling the selected track of the playlist this object wraps.
-     * <br><p>Note: This may return {@code null} if this object does <b>NOT</b> wrap a playlist.</p>
+     * <br><p>Note: This may return {@code null} if this object does <b>NOT</b> wrap a playlist or if the used {@link AudioNode AudioNode} is running Lavalink Server v2.</p>
      * @return The <b>possibly-null</b> {@link TrackDataPair TrackDataPair} with the information of the selected track.
      */
     @Nullable

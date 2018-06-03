@@ -17,6 +17,7 @@
 package samophis.lavalink.client.entities;
 
 import com.github.benmanes.caffeine.cache.Cache;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import samophis.lavalink.client.entities.internal.LavaClientImpl;
 import samophis.lavalink.client.entities.internal.LoadBalancerImpl;
 
@@ -24,6 +25,7 @@ import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents the LavaClient implementation of Lavalink, with default constants matching those of the Lavalink-Server, collections of nodes, players, etc.
@@ -45,6 +47,8 @@ public interface LavaClient {
     long DEFAULT_CACHE_EXPIRE_WRITE = 1200000;
     /** The default cache expire-after-access time, in milliseconds. */
     long DEFAULT_CACHE_EXPIRE_ACCESS = 900000;
+    /** Whether nodes should by default be treated as using Lavalink v3. */
+    boolean VERSION_THREE_ENABLED = false;
 
     /**
      * Used to fetch an unmodifiable list of all the {@link LavaPlayer LavaPlayers} associated with this client.
@@ -132,6 +136,13 @@ public interface LavaClient {
     int getGlobalRestPort();
 
     /**
+     * Fetches whether LavaClient should by-default treat all {@link AudioNode AudioNodes} it has access to as using Lavalink Server v3.
+     * <br><p>This value equates to {@value VERSION_THREE_ENABLED} if it's not specified during the construction of the LavaClient instance.</p>
+     * @return Whether LavaClient should treat all nodes as using Lavalink Server v3.
+     */
+    boolean isGloballyUsingLavalinkVersionThree();
+
+    /**
      * Fetches the amount of shards specified during the construction of the LavaClient instance.
      * @return The amount of shards LavaClient is aware of and passes to {@link AudioNode AudioNodes} when connecting.
      */
@@ -194,6 +205,14 @@ public interface LavaClient {
      */
     @Nonnull
     Cache<String, TrackDataPair> getIdentifierCache();
+
+    /**
+     * Fetches an <b>unmodifiable</b> view of the internal player map.
+     * <br><p>Note: This returns an <b>unmodifiable</b> map, meaning any attempts to modify it will throw exceptions.</p>
+     * @return An <b>unmodifiable</b> view of the internal player map.
+     */
+    @Nonnull
+    Long2ObjectMap<LavaPlayer> getPlayerMap();
 
     /**
      * Fetches the {@link AudioNode AudioNode} with the least amount of load on it, used to balance the load of {@link LavaPlayer LavaPlayers} on different nodes.
