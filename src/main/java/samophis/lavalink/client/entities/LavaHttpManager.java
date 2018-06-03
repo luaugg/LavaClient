@@ -35,10 +35,10 @@ public interface LavaHttpManager {
     LavaClient getClient();
 
     /**
-     * Sends a request to the {@link AudioNode AudioNode} with the least load on it to get back the AudioTrack.
-     * <br><p>This sends back both the data of the AudioTrack and its encoded representation, for use in playing tracks.</p>
-     * @param identifier The identifier of the source to be played -- automatically URL-Encoded.
-     * @param callback The callback fired upon a successful response. The {@link TrackPair TrackPair} contains the encoded track data and the track itself.
+     * Sends a request to the {@link AudioNode AudioNode} with the least load on it to resolve track(s) based on the provided identifier.
+     * @param identifier The <b>not-null</b> identifier from which the tracks are derived.
+     * @param callback The <b>not-null</b> callback to use, accepting a <b>not-null</b> {@link AudioWrapper AudioWrapper} object.
+     * @throws NullPointerException If the provided identifier or callback are {@code null}.
      */
-    void resolveTrack(@Nonnull String identifier, @Nonnull Consumer<TrackPair> callback);
+    void resolveTracks(@Nonnull String identifier, @Nonnull Consumer<AudioWrapper> callback);
 }

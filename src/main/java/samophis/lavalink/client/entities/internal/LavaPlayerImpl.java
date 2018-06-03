@@ -19,10 +19,7 @@ package samophis.lavalink.client.entities.internal;
 import com.jsoniter.output.JsonStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import samophis.lavalink.client.entities.AudioNode;
-import samophis.lavalink.client.entities.LavaClient;
-import samophis.lavalink.client.entities.LavaPlayer;
-import samophis.lavalink.client.entities.TrackPair;
+import samophis.lavalink.client.entities.*;
 import samophis.lavalink.client.entities.events.*;
 import samophis.lavalink.client.entities.messages.client.*;
 import samophis.lavalink.client.exceptions.ListenerException;
@@ -36,6 +33,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 public class LavaPlayerImpl implements LavaPlayer {
     private final LavaClient client;
@@ -145,29 +145,70 @@ public class LavaPlayerImpl implements LavaPlayer {
         this.track = Asserter.requireNotNull(track);
         Asserter.requireNotNegative(startTime);
         setNode(LavaClient.getBestNode());
-        TrackPair cached = client.getIdentifierCache().get(track.getIdentifier(), ignored -> new TrackPair(LavaClientUtil.fromAudioTrack(track), track));
+        TrackDataPair cached = client.getIdentifierCache().get(track.getIdentifier(), ignored -> new TrackDataPairImpl(track));
         if (cached == null)
-            cached = new TrackPair(LavaClientUtil.fromAudioTrack(track), track);
-        String text = JsonStream.serialize(new PlayTrack(guild_id, startTime, endTime, cached.getTrackData()));
-        TrackStartEvent start = new TrackStartEvent(this, track);
-        node.getSocket().sendText(text);
-        emitEvent(start);
+            cached = new TrackDataPairImpl(track);
+        handleTrackPair(cached, startTime, endTime);
     }
     @Override
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void playTrack(@Nonnull String identifier, @Nonnegative long startTime, long endTime) {
-        // identifier not checked due to other pieces of code also checking
         Asserter.requireNotNegative(startTime);
-        TrackPair pair = client.getIdentifierCache().getIfPresent(identifier);
+        TrackDataPair pair = client.getIdentifierCache().getIfPresent(identifier);
         if (pair == null) {
-            client.getHttpManager().resolveTrack(identifier, trackPair -> {
-                client.getIdentifierCache().put(identifier, trackPair);
-                handleTrackPair(trackPair, startTime, endTime);
+            client.getHttpManager().resolveTracks(identifier, wrapper -> {
+                List<TrackDataPair> tracks = wrapper.getLoadedTracks();
+                if (tracks.size() > 0) {
+                    TrackDataPair pr = tracks.get(0);
+                    this.track = pr.getTrack();
+                    client.getIdentifierCache().put(identifier, pr);
+                    handleTrackPair(pr, startTime, endTime);
+                }
             });
         }
         else {
+            this.track = pair.getTrack();
             handleTrackPair(pair, startTime, endTime);
         }
+    }
+    @Nonnull
+    @Override
+    public AudioWrapper loadTracks(@Nonnull String identifier) {
+        TrackDataPair pair = client.getIdentifierCache().getIfPresent(identifier);
+        if (pair != null) {
+            List<TrackDataPair> pairs = new ObjectArrayList<>(1);
+            pairs.add(pair);
+            return new AudioWrapperImpl(null, null, pairs, false);
+        }
+        AtomicReference<AudioWrapper> reference = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        try {
+            try {
+                client.getHttpManager().resolveTracks(identifier, ref -> {
+                    reference.set(ref);
+                    latch.countDown();
+                });
+            } catch (Throwable thr) {
+                latch.countDown(); // Just to ensure a thread isn't blocked forever due to an error.
+            }
+            latch.await();
+            return reference.get();
+        } catch (InterruptedException exc) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(exc);
+        }
+    }
+    @Override
+    public void loadTracksAsync(@Nonnull String identifier, @Nonnull Consumer<AudioWrapper> callback) {
+        Asserter.requireNotNull(callback);
+        TrackDataPair pair = client.getIdentifierCache().getIfPresent(identifier);
+        if (pair != null) {
+            List<TrackDataPair> pairs = new ObjectArrayList<>(1);
+            pairs.add(pair);
+            callback.accept(new AudioWrapperImpl(null, null, pairs, false));
+            return;
+        }
+        client.getHttpManager().resolveTracks(identifier, callback);
     }
     @Override
     public void stopTrack() {
@@ -229,7 +270,7 @@ public class LavaPlayerImpl implements LavaPlayer {
         this.channel_id = channel_id;
         return this;
     }
-    private void handleTrackPair(TrackPair pair, long start, long end) {
+    private void handleTrackPair(TrackDataPair pair, long start, long end) {
         String data = JsonStream.serialize(new PlayTrack(guild_id, start, end, pair.getTrackData()));
         TrackStartEvent event = new TrackStartEvent(this, pair.getTrack());
         setNode(LavaClient.getBestNode());

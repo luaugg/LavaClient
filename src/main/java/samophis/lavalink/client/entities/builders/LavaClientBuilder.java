@@ -37,6 +37,7 @@ public class LavaClientBuilder {
     private String password;
     private int restPort, wsPort, shards;
     private long userId;
+    private boolean isGloballyUsingLavalinkVersionThree;
     public LavaClientBuilder(boolean overrideJson, @Nonnegative long expireWriteMs, @Nonnegative long expireAccessMs) {
         if (overrideJson) {
             JsonIterator.setMode(DecodingMode.DYNAMIC_MODE_AND_MATCH_FIELD_WITH_HASH);
@@ -48,6 +49,7 @@ public class LavaClientBuilder {
         this.password = LavaClient.PASSWORD_DEFAULT;
         this.restPort = LavaClient.REST_PORT_DEFAULT;
         this.wsPort = LavaClient.WS_PORT_DEFAULT;
+        this.isGloballyUsingLavalinkVersionThree = LavaClient.VERSION_THREE_ENABLED;
     }
     public LavaClientBuilder(@Nonnegative long expireWriteMs, @Nonnegative long expireAccessMs) {
         this(true, expireWriteMs, expireAccessMs);
@@ -84,6 +86,10 @@ public class LavaClientBuilder {
         this.wsPort = wsPort;
         return this;
     }
+    public LavaClientBuilder setGloballyUsingLavalinkVersionThree(boolean usingLavalinkVersionThree) {
+        this.isGloballyUsingLavalinkVersionThree = usingLavalinkVersionThree;
+        return this;
+    }
     public LavaClientBuilder setShardCount(int shards) {
         this.shards = shards;
         return this;
@@ -93,6 +99,6 @@ public class LavaClientBuilder {
         return this;
     }
     public LavaClient build() {
-        return new LavaClientImpl(password, restPort, wsPort, shards, expireWriteMs, expireAccessMs, userId, entries);
+        return new LavaClientImpl(password, restPort, wsPort, shards, expireWriteMs, expireAccessMs, userId, isGloballyUsingLavalinkVersionThree, entries);
     }
 }
