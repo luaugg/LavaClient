@@ -1,3 +1,19 @@
+/*
+   Copyright 2018 Samuel Pritchard
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
+
 package samophis.lavalink.client.entities.internal;
 
 import com.jsoniter.output.JsonStream;
@@ -10,15 +26,16 @@ import samophis.lavalink.client.entities.TrackPair;
 import samophis.lavalink.client.entities.events.*;
 import samophis.lavalink.client.entities.messages.client.*;
 import samophis.lavalink.client.exceptions.ListenerException;
+import samophis.lavalink.client.util.Asserter;
 import samophis.lavalink.client.util.LavaClientUtil;
 
+import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 public class LavaPlayerImpl implements LavaPlayer {
     private final LavaClient client;
@@ -30,30 +47,35 @@ public class LavaPlayerImpl implements LavaPlayer {
     private AudioNode node;
     private AudioTrack track;
     @SuppressWarnings("WeakerAccess")
-    public LavaPlayerImpl(LavaClient client, long guild_id) {
-        this.client = client;
-        this.guild_id = guild_id;
+    public LavaPlayerImpl(@Nonnull LavaClient client, @Nonnegative long guild_id) {
+        this.client = Asserter.requireNotNull(client);
+        this.guild_id = Asserter.requireNotNegative(guild_id);
         this.listeners = new ObjectArrayList<>();
-        this.position = -1;
-        this.timestamp = -1;
+        this.position = 0;
+        this.timestamp = 0;
     }
     @Override
+    @Nonnull
     public LavaClient getClient() {
         return client;
     }
     @Override
+    @Nonnull
     public List<AudioEventListener> getListeners() {
         return Collections.unmodifiableList(listeners);
     }
     @Override
+    @Nonnegative
     public long getGuildId() {
         return guild_id;
     }
     @Override
+    @Nonnegative
     public long getChannelId() {
         return channel_id;
     }
     @Override
+    @Nonnegative
     public long getPosition() {
         /* Note, this logic is taken from Frederikam's default JDA Lavalink Client.
            All credit for this section goes entirely to him, which can be found here:
@@ -66,10 +88,12 @@ public class LavaPlayerImpl implements LavaPlayer {
                 : Math.min(position + (System.currentTimeMillis() - timestamp), track.getDuration());
     }
     @Override
+    @Nonnegative
     public long getTimestamp() {
         return timestamp;
     }
     @Override
+    @Nonnegative
     public int getVolume() {
         return volume;
     }
@@ -78,16 +102,18 @@ public class LavaPlayerImpl implements LavaPlayer {
         return paused;
     }
     @Override
+    @Nonnull
     public AudioNode getConnectedNode() {
         return node;
     }
     @Override
+    @Nonnull
     public AudioTrack getPlayingTrack() {
         return track;
     }
     @Override
     public void addListener(@Nonnull AudioEventListener listener) {
-        listeners.add(Objects.requireNonNull(listener));
+        listeners.add(Asserter.requireNotNull(listener));
     }
     @Override
     public void setPaused(boolean paused) {
@@ -99,8 +125,8 @@ public class LavaPlayerImpl implements LavaPlayer {
         emitEvent(event);
     }
     @Override
-    public void setVolume(int volume) {
-        if (volume < 0 || volume > 150)
+    public void setVolume(@Nonnegative int volume) {
+        if (Asserter.requireNotNegative(volume) > 150)
             return;
         node.getSocket().sendText(JsonStream.serialize(new SetVolume(guild_id, volume)));
         this.volume = volume;
@@ -114,8 +140,10 @@ public class LavaPlayerImpl implements LavaPlayer {
         playTrack(track, 0, -1);
     }
     @Override
-    public void playTrack(@Nonnull AudioTrack track, long startTime, long endTime) {
-        this.track = Objects.requireNonNull(track);
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void playTrack(@Nonnull AudioTrack track, @Nonnegative long startTime, long endTime) {
+        this.track = Asserter.requireNotNull(track);
+        Asserter.requireNotNegative(startTime);
         setNode(LavaClient.getBestNode());
         TrackPair cached = client.getIdentifierCache().get(track.getIdentifier(), ignored -> new TrackPair(LavaClientUtil.fromAudioTrack(track), track));
         if (cached == null)
@@ -126,8 +154,11 @@ public class LavaPlayerImpl implements LavaPlayer {
         emitEvent(start);
     }
     @Override
-    public void playTrack(@Nonnull String identifier, long startTime, long endTime) {
-        TrackPair pair = client.getIdentifierCache().getIfPresent(Objects.requireNonNull(identifier));
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void playTrack(@Nonnull String identifier, @Nonnegative long startTime, long endTime) {
+        // identifier not checked due to other pieces of code also checking
+        Asserter.requireNotNegative(startTime);
+        TrackPair pair = client.getIdentifierCache().getIfPresent(identifier);
         if (pair == null) {
             client.getHttpManager().resolveTrack(identifier, trackPair -> {
                 client.getIdentifierCache().put(identifier, trackPair);
@@ -147,13 +178,15 @@ public class LavaPlayerImpl implements LavaPlayer {
         node.getSocket().sendText(JsonStream.serialize(new DestroyPlayer(guild_id)));
     }
     @Override
-    public void seek(long position) {
-        position = Math.max(track.getDuration(), Math.min(0, position));
+    public void seek(@Nonnegative long position) {
+        if (Asserter.requireNotNegative(position) > Asserter.requireNotNull(track).getDuration())
+            return;
         node.getSocket().sendText(JsonStream.serialize(new SeekTrack(guild_id, position)));
+        this.position = position;
     }
     @Override
     public void emitEvent(@Nonnull PlayerEvent event) {
-        Objects.requireNonNull(event);
+        Asserter.requireNotNull(event);
         Class<? extends AudioEventListener> cls = AudioEventListener.class;
         Class<? extends PlayerEvent> ev_cls = event.getClass();
         for (Method meth : cls.getDeclaredMethods()) {
@@ -175,8 +208,9 @@ public class LavaPlayerImpl implements LavaPlayer {
     }
     @Override
     public void setNode(@Nonnull AudioNode node) {
-        this.node = Objects.requireNonNull(node);
+        this.node = Asserter.requireNotNull(node);
     }
+    // Internal methods are not checked because they're typically only used internally.
     public LavaPlayerImpl setPosition(long position) {
         this.position = position;
         return this;

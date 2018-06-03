@@ -1,3 +1,19 @@
+/*
+   Copyright 2018 Samuel Pritchard
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
+
 package samophis.lavalink.client.entities.builders;
 
 import com.jsoniter.JsonIterator;
@@ -8,19 +24,20 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import samophis.lavalink.client.entities.AudioNodeEntry;
 import samophis.lavalink.client.entities.LavaClient;
 import samophis.lavalink.client.entities.internal.LavaClientImpl;
+import samophis.lavalink.client.util.Asserter;
 
+import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Objects;
 
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class LavaClientBuilder {
     private final List<AudioNodeEntry> entries;
     private final long expireWriteMs, expireAccessMs;
     private String password;
     private int restPort, wsPort, shards;
     private long userId;
-    public LavaClientBuilder(boolean overrideJson, long expireWriteMs, long expireAccessMs) {
+    public LavaClientBuilder(boolean overrideJson, @Nonnegative long expireWriteMs, @Nonnegative long expireAccessMs) {
         if (overrideJson) {
             JsonIterator.setMode(DecodingMode.DYNAMIC_MODE_AND_MATCH_FIELD_WITH_HASH);
             JsonStream.setMode(EncodingMode.DYNAMIC_MODE);
@@ -32,7 +49,7 @@ public class LavaClientBuilder {
         this.restPort = LavaClient.REST_PORT_DEFAULT;
         this.wsPort = LavaClient.WS_PORT_DEFAULT;
     }
-    public LavaClientBuilder(long expireWriteMs, long expireAccessMs) {
+    public LavaClientBuilder(@Nonnegative long expireWriteMs, @Nonnegative long expireAccessMs) {
         this(true, expireWriteMs, expireAccessMs);
     }
     public LavaClientBuilder(boolean overrideJson) {
@@ -43,13 +60,10 @@ public class LavaClientBuilder {
     }
 
     public LavaClientBuilder addEntry(@Nonnull AudioNodeEntry entry) {
-        Objects.requireNonNull(entry);
-        if (entry.getServerAddress() == null || entry.getServerAddress().isEmpty())
-            throw new IllegalArgumentException("Your Lavalink Node Address must be non-null and not empty (and valid!)");
-        entries.add(entry);
+        entries.add(Asserter.requireNotNull(entry));
         return this;
     }
-    public LavaClientBuilder addEntry(@Nonnull LavaClient client, @Nonnull String address, int restPort, int wsPort, @Nullable String password) {
+    public LavaClientBuilder addEntry(@Nonnull LavaClient client, @Nonnull String address, @Nonnegative int restPort, @Nonnegative int wsPort, @Nonnull String password) {
         return addEntry(new AudioNodeEntryBuilder(client)
                 .setAddress(address)
                 .setRestPort(restPort)

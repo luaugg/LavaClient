@@ -1,21 +1,38 @@
+/*
+   Copyright 2018 Samuel Pritchard
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
+
 package samophis.lavalink.client.entities.internal;
 
 import com.jsoniter.output.JsonStream;
 import samophis.lavalink.client.entities.AudioNode;
 import samophis.lavalink.client.entities.EventWaiter;
 import samophis.lavalink.client.entities.messages.client.VoiceUpdate;
+import samophis.lavalink.client.util.Asserter;
 
+import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Objects;
 
 public class EventWaiterImpl implements EventWaiter {
     private final AudioNode node;
     private final long guild_id;
     private String session_id, token, endpoint;
-    public EventWaiterImpl(@Nonnull AudioNode node, long guild_id) {
-        this.node = Objects.requireNonNull(node);
-        this.guild_id = guild_id;
+    public EventWaiterImpl(@Nonnull AudioNode node, @Nonnegative long guild_id) {
+        this.node = Asserter.requireNotNull(node);
+        this.guild_id = Asserter.requireNotNegative(guild_id);
     }
     @Nullable
     @Override
@@ -32,24 +49,26 @@ public class EventWaiterImpl implements EventWaiter {
     public String getEndpoint() {
         return endpoint;
     }
+    @Nonnull
     @Override
     public AudioNode getNode() {
         return node;
     }
+    @Nonnegative
     @Override
     public long getGuildId() {
         return guild_id;
     }
     @Override
     public void setSessionIdAndTryConnect(@Nonnull String session_id) {
-        this.session_id = Objects.requireNonNull(session_id);
+        this.session_id = Asserter.requireNotNull(session_id);
         if (token != null && endpoint != null)
             tryConnect();
     }
     @Override
     public void setServerAndTryConnect(@Nonnull String token, @Nonnull String endpoint) {
-        this.token = Objects.requireNonNull(token);
-        this.endpoint = Objects.requireNonNull(endpoint);
+        this.token = Asserter.requireNotNull(token);
+        this.endpoint = Asserter.requireNotNull(endpoint);
         if (session_id != null)
             tryConnect();
     }

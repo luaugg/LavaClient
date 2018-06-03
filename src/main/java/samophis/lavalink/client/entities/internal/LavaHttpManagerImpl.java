@@ -1,3 +1,19 @@
+/*
+   Copyright 2018 Samuel Pritchard
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
+
 package samophis.lavalink.client.entities.internal;
 
 import com.jsoniter.JsonIterator;
@@ -17,8 +33,10 @@ import samophis.lavalink.client.entities.LavaClient;
 import samophis.lavalink.client.entities.LavaHttpManager;
 import samophis.lavalink.client.entities.TrackPair;
 import samophis.lavalink.client.exceptions.HttpRequestException;
+import samophis.lavalink.client.util.Asserter;
 import samophis.lavalink.client.util.LavaClientUtil;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -29,17 +47,28 @@ public class LavaHttpManagerImpl implements LavaHttpManager {
     private final CloseableHttpAsyncClient http;
     private final LavaClient client;
     @SuppressWarnings("WeakerAccess")
-    public LavaHttpManagerImpl(LavaClient client) {
+    public LavaHttpManagerImpl(@Nonnull LavaClient client) {
         this.http = HttpAsyncClients.createDefault();
         this.http.start();
-        this.client = client;
+        this.client = Asserter.requireNotNull(client);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                http.close();
+            } catch (IOException exc) {
+                LOGGER.error("Error when closing HTTP Client!", exc);
+                // no need to throw it again, application already exiting
+            }
+        }));
     }
     @Override
+    @Nonnull
     public LavaClient getClient() {
         return client;
     }
     @Override
-    public void resolveTrack(String identifier, Consumer<TrackPair> callback) {
+    public void resolveTrack(@Nonnull String identifier, @Nonnull Consumer<TrackPair> callback) {
+        Asserter.requireNotNull(identifier);
+        Asserter.requireNotNull(callback);
         try {
             identifier = URLEncoder.encode(identifier, "UTF-8");
         } catch (UnsupportedEncodingException exc) {

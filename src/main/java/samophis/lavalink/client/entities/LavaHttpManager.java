@@ -1,5 +1,22 @@
+/*
+   Copyright 2018 Samuel Pritchard
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
+
 package samophis.lavalink.client.entities;
 
+import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 
 /**
@@ -14,6 +31,7 @@ public interface LavaHttpManager {
      * Fetches the {@link LavaClient LavaClient} associated with this manager.
      * @return The {@link LavaClient LavaClient} attached to this manager.
      */
+    @Nonnull
     LavaClient getClient();
 
     /**
@@ -22,5 +40,5 @@ public interface LavaHttpManager {
      * @param identifier The identifier of the source to be played -- automatically URL-Encoded.
      * @param callback The callback fired upon a successful response. The {@link TrackPair TrackPair} contains the encoded track data and the track itself.
      */
-    void resolveTrack(String identifier, Consumer<TrackPair> callback);
+    void resolveTrack(@Nonnull String identifier, @Nonnull Consumer<TrackPair> callback);
 }

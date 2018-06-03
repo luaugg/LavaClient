@@ -1,7 +1,24 @@
+/*
+   Copyright 2018 Samuel Pritchard
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
+
 package samophis.lavalink.client.entities;
 
 import samophis.lavalink.client.entities.internal.EventWaiterImpl;
 
+import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -17,36 +34,42 @@ import javax.annotation.Nullable;
  * @author SamOphis
  */
 
+@SuppressWarnings("unused")
 public interface EventWaiter {
     /**
      * Fetches the Session ID as set by the end-user. This may be {@code 'null'} at any given time.
      * @return The <b>possibly-null-or-invalid</b> Session ID as set by the end-user.
      */
-    @Nullable String getSessionId();
+    @Nullable
+    String getSessionId();
 
     /**
      * Fetches the Voice Token (<b>NOT the same as an Account Token</b>) as set by the end-user. This may be {@code 'null'} at any given time.
      * @return The <b>possibly-null-or-invalid</b> Voice Token as set by the end-user.
      */
-    @Nullable String getToken();
+    @Nullable
+    String getToken();
 
     /**
      * Fetches the Voice Server Endpoint as set by the end-user. This may be {@code 'null'} at any given time.
      * @return The <b>possibly-null-or-invalid</b> Voice Server Endpoint as set by the end-user.
      */
-    @Nullable String getEndpoint();
+    @Nullable
+    String getEndpoint();
 
     /**
      * Fetches the <b>not-null</b> {@link AudioNode AudioNode} this EventWaiter will send an update to.
      * <br><p>LavaClient will automatically set this to the {@link AudioNode AudioNode} with the least load on it if the user does not provide a node to connect to.</p>
      * @return The <b>not-null</b> {@link AudioNode AudioNode} this EventWaiter will send an update to.
      */
+    @Nonnull
     AudioNode getNode();
 
     /**
      * Fetches the ID of the Guild to open an Audio Stream to, as specified by the end-user.
      * @return The <b>possibly-invalid</b> ID of the Guild to open an Audio Stream to, as specified by the end-user.
      */
+    @Nonnegative
     long getGuildId();
 
     /**
@@ -78,7 +101,9 @@ public interface EventWaiter {
      * @return A new EventWaiter object with the provided {@link AudioNode AudioNode} and Guild ID.
      * @see EventWaiter#from(long)
      */
-    static EventWaiter from(@Nullable AudioNode node, long guild_id) {
+    @Nonnull
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    static EventWaiter from(@Nullable AudioNode node, @Nonnegative long guild_id) {
         return new EventWaiterImpl(node == null ? LavaClient.getBestNode() : node, guild_id);
     }
 
@@ -88,7 +113,8 @@ public interface EventWaiter {
      * @return A new EventWaiter object with the {@link AudioNode AudioNode} that has the least load on it and the associated Guild ID.
      * @see EventWaiter#from(AudioNode, long)
      */
-    static EventWaiter from(long guild_id) {
+    @Nonnull
+    static EventWaiter from(@Nonnegative long guild_id) {
         return from(null, guild_id);
     }
 }

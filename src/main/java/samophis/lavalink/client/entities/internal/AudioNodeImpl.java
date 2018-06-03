@@ -1,3 +1,19 @@
+/*
+   Copyright 2018 Samuel Pritchard
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
+
 package samophis.lavalink.client.entities.internal;
 
 import com.jsoniter.JsonIterator;
@@ -15,8 +31,11 @@ import samophis.lavalink.client.entities.events.TrackExceptionEvent;
 import samophis.lavalink.client.entities.events.TrackStuckEvent;
 import samophis.lavalink.client.entities.messages.server.PlayerUpdate;
 import samophis.lavalink.client.entities.messages.server.Stats;
+import samophis.lavalink.client.util.Asserter;
 import samophis.lavalink.client.util.LavaClientUtil;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +50,9 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
     private Statistics statistics;
     private AtomicInteger reconnectInterval;
     @SuppressWarnings("WeakerAccess")
-    public AudioNodeImpl(LavaClient client, AudioNodeEntry entry) {
+    public AudioNodeImpl(@Nonnull LavaClient client, @Nonnull AudioNodeEntry entry) {
+        Asserter.requireNotNull(client);
+        Asserter.requireNotNull(entry);
         this.client = client;
         this.balancer = new LoadBalancerImpl(this);
         this.entry = entry;
@@ -50,6 +71,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         }
     }
     @Override
+    @Nonnull
     public AudioNodeEntry getEntry() {
         return entry;
     }
@@ -65,10 +87,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
     }
     @Override
     public void onConnected(WebSocket websocket, Map<String, List<String>> headers) {
-        client.getPlayers().forEach(player -> {
-            if (player.getConnectedNode() == null)
-                player.setNode(this);
-        });
+        client.getPlayers().forEach(player -> player.setNode(LavaClient.getBestNode()));
         reconnectInterval.set(1000);
     }
     @Override
@@ -81,9 +100,9 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         int code = closedByServer ? serverCloseFrame.getCloseCode() : clientCloseFrame.getCloseCode();
         if (closedByServer) {
             if (code == 1000)
-                LOGGER.info("Lavalink-Server ({}:{}) closed the connection gracefully with the reason: {}", entry.getServerAddress(), entry.getWebSocketPort(), reason);
+                LOGGER.info("Lavalink-Server ({}:{}) closed the connection gracefully with the reason: {}", entry.getWebSocketAddress(), entry.getWebSocketPort(), reason);
             else {
-                LOGGER.warn("Lavalink-Server ({}:{}) closed the connection unexpectedly with the reason: {}", entry.getServerAddress(), entry.getWebSocketPort(), reason);
+                LOGGER.warn("Lavalink-Server ({}:{}) closed the connection unexpectedly with the reason: {}", entry.getWebSocketAddress(), entry.getWebSocketPort(), reason);
                 int time = reconnectInterval.getAndSet(Math.min(reconnectInterval.get() * 2, 64000));
                 try {
                     Thread.sleep(time);
@@ -104,8 +123,6 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
             case "playerUpdate":
                 PlayerUpdate update = JsonIterator.deserialize(text, PlayerUpdate.class);
                 player = client.getPlayerByGuildId(Long.parseUnsignedLong(update.guildId));
-                if (player == null)
-                    throw new IllegalStateException("Null audio player?");
                 ((LavaPlayerImpl) player).setPosition(update.state.position)
                         .setTimestamp(update.state.time);
                 break;
@@ -131,8 +148,6 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
                 break;
             case "event":
                 player = client.getPlayerByGuildId(Long.parseUnsignedLong(data.get("guildId").toString()));
-                if (player == null)
-                    throw new IllegalStateException("Null audio player?");
                 AudioTrack track = LavaClientUtil.toAudioTrack(data.get("track").toString());
                 String type = data.get("type").toString();
                 PlayerTrackEvent event;
@@ -157,14 +172,17 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         }
     }
     @Override
+    @Nonnull
     public LavaClient getClient() {
         return client;
     }
     @Override
+    @Nullable
     public Statistics getStatistics() {
         return statistics;
     }
     @Override
+    @Nonnull
     public LoadBalancer getBalancer() {
         return balancer;
     }
@@ -173,6 +191,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         return socket.isOpen();
     }
     @Override
+    @Nonnull
     public WebSocket getSocket() {
         return socket;
     }
