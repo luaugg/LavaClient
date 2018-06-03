@@ -24,6 +24,7 @@ import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Represents a Guild-specific player instance similar to the default Lavalink Client's Link + IPlayer classes.
@@ -116,7 +117,9 @@ public interface LavaPlayer {
     /**
      * Plays a track using the best, available {@link AudioNode AudioNode}.
      * <br><p>Note: Playing an AudioTrack directly saves a little bit of latency but also puts more load on the client and forces you to implement Lavaplayer on a wider scale.
-     * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via a track. Both work perfectly and all methods do cache, removing some latency/load.</p>
+     * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via a track. Both work perfectly and all methods do cache, removing some latency/load.
+     * <br>Additionally, all the {@code playTrack} methods will only play one track. Even if a search is done or a playlist is loaded, only one song is played due to
+     * the nature of music bots not being locked and uniform.</p>
      * @throws NullPointerException If the provided AudioTrack is null.
      * @param track The <b>non-null</b> track to play.
      */
@@ -146,7 +149,9 @@ public interface LavaPlayer {
     /**
      * Plays a track using the best, available {@link AudioNode AudioNode}.
      * <br><p>Note: Playing a track via an identifier adds a little bit of latency but also puts less load on the client and removes the need to implement Lavaplayer more widely.
-     * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via a track. Both work perfectly and all methods do cache, removing some latency/load..</p>
+     * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via a track. Both work perfectly and all methods do cache, removing some latency/load.
+     * <br>Additionally, all the {@code playTrack} methods will only play one track. Even if a search is done or a playlist is loaded, only one song is played due to
+     * the nature of music bots not being locked and uniform.</p>
      * @throws NullPointerException If the provided identifier is null.
      * @throws IllegalArgumentException If the ending time is smaller than the starting time.
      * @param identifier The <b>non-null</b> identifier from which to load an AudioTrack.
@@ -156,7 +161,27 @@ public interface LavaPlayer {
     void playTrack(@Nonnull String identifier, @Nonnegative long startTime, long endTime);
 
     /**
-     * Requests the Lavalink-Server to stop playback.
+     * Uses the {@link AudioNode AudioNode} with the least load acting upon it to load the track(s) associated with an identifier.
+     * <br><p>Returns an {@link AudioWrapper AudioWrapper} object which wraps search results, playlists or normal tracks into one object.</p>
+     * @param identifier The <b>not-null</b> identifier used to actually load the tracks.
+     * @throws NullPointerException If the provided identifier was {@code null}.
+     * @return An {@link AudioWrapper AudioWrapper} object which contains the loaded tracks.
+     */
+    @Nonnull
+    AudioWrapper loadTracks(@Nonnull String identifier);
+
+    /**
+     * Asynchronously loads track(s) using the {@link AudioNode AudioNode} with the least load acting upon it.
+     * <br><p>Follow up code depending on the result <b>MUST</b> be run in the callback to ensure linear and properly working code.
+     * For small bots you can use the blocking {@link LavaPlayer#loadTracks(String)} method which blocks the calling thread until the response is received,
+     * allowing you to avoid callbacks at the sake of performance!</p>
+     * @param identifier The <b>not-null</b> identifier used to actually load the tracks.
+     * @param callback The <b>not-null</b> callback used to actually do something with the loaded tracks.
+     */
+    void loadTracksAsync(@Nonnull String identifier, @Nonnull Consumer<AudioWrapper> callback);
+
+    /**
+     * Requests the Lavalink Server to stop playback.
      */
     void stopTrack();
 

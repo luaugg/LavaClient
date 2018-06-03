@@ -193,7 +193,7 @@ public interface LavaClient {
      * @return the internal cache LavaClient uses to cut down repeated song loading impact.
      */
     @Nonnull
-    Cache<String, TrackPair> getIdentifierCache();
+    Cache<String, TrackDataPair> getIdentifierCache();
 
     /**
      * Fetches the {@link AudioNode AudioNode} with the least amount of load on it, used to balance the load of {@link LavaPlayer LavaPlayers} on different nodes.

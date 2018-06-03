@@ -42,7 +42,7 @@ public class LavaClientImpl implements LavaClient {
     private final String password;
     private final int restPort, wsPort, shards;
     private final long expireWriteMs, expireAccessMs, userId;
-    private final Cache<String, TrackPair> identifierCache;
+    private final Cache<String, TrackDataPair> identifierCache;
     public LavaClientImpl(String password, int restPort, int wsPort, int shards, long expireWriteMs, long expireAccessMs, long userId, List<AudioNodeEntry> entries) {
         this.manager = new LavaHttpManagerImpl(this);
         this.password = Asserter.requireNotNull(password);
@@ -152,7 +152,7 @@ public class LavaClientImpl implements LavaClient {
     }
     @Nonnull
     @Override
-    public Cache<String, TrackPair> getIdentifierCache() {
+    public Cache<String, TrackDataPair> getIdentifierCache() {
         return identifierCache;
     }
 }
