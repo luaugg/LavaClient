@@ -88,7 +88,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
     }
     @Override
     public void onConnected(WebSocket websocket, Map<String, List<String>> headers) {
-        headers.values().forEach(list -> System.out.println(Arrays.toString(list.toArray())));
+        headers.forEach((str, list) -> System.out.println(str + ": " + Arrays.toString(list.toArray())));
         client.getPlayers().forEach(player -> player.setNode(LavaClient.getBestNode()));
         reconnectInterval.set(1000);
     }
