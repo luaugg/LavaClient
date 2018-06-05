@@ -86,6 +86,9 @@ public class LavaClientBuilder {
         this.wsPort = wsPort;
         return this;
     }
+    @Deprecated
+    // LavaClient automatically detects if a node is running v3 based on response headers.
+    // This serves no use besides compatibility with older v3 nodes.
     public LavaClientBuilder setGloballyUsingLavalinkVersionThree(boolean usingLavalinkVersionThree) {
         this.isGloballyUsingLavalinkVersionThree = usingLavalinkVersionThree;
         return this;

@@ -85,8 +85,10 @@ public interface AudioNodeEntry {
 
     /**
      * Returns whether or not the {@link AudioNode AudioNode} this entry represents is running Lavalink Server v3.
-     * <br><p>If this value is true, any {@link AudioWrapper AudioWrapper} returned from loading tracks will be missing everything besides the track list.</p>
+     * <br><p>If this value is true, any {@link AudioWrapper AudioWrapper} returned from loading tracks will be missing everything besides the track list.
+     * <br>Deprecated since v1.2 as the newest versions of Lavalink v3 report their version server-side.</p>
      * @return Whether or not this node is running Lavalink Server v3.
      */
+    @Deprecated
     boolean isUsingLavalinkVersionThree();
 }
