@@ -18,6 +18,7 @@ package samophis.lavalink.client.entities;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Represents an entry for an {@link AudioNode AudioNode} with configuration options.
@@ -91,4 +92,10 @@ public interface AudioNodeEntry {
      */
     @Deprecated
     boolean isUsingLavalinkVersionThree();
+
+    /**
+     * Fetches the <b>possibly-null</b> {@link SocketInitializer SocketInitializer} used to "initialize" a LavaClient WebSocket connection.
+     * @return The <b>possibly-null</b> {@link SocketInitializer SocketInitializer} attached to this node entry.
+     */
+    @Nullable SocketInitializer getSocketInitializer();
 }

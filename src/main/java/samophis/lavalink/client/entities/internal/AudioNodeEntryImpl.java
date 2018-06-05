@@ -18,10 +18,12 @@ package samophis.lavalink.client.entities.internal;
 
 import samophis.lavalink.client.entities.AudioNodeEntry;
 import samophis.lavalink.client.entities.LavaClient;
+import samophis.lavalink.client.entities.SocketInitializer;
 import samophis.lavalink.client.util.Asserter;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.regex.Pattern;
 
 public class AudioNodeEntryImpl implements AudioNodeEntry {
@@ -31,7 +33,8 @@ public class AudioNodeEntryImpl implements AudioNodeEntry {
     private final String address, password, httpAddress, wsAddress;
     private final int rest, ws;
     private final boolean isUsingVersionThree;
-    public AudioNodeEntryImpl(LavaClient client, String address, String password, int rest, int ws, boolean isUsingVersionThree) {
+    private final SocketInitializer initializer;
+    public AudioNodeEntryImpl(LavaClient client, String address, String password, int rest, int ws, boolean isUsingVersionThree, SocketInitializer initializer) {
         this.client = Asserter.requireNotNull(client);
         this.address = Asserter.requireNotNull(address);
         this.httpAddress = !HTTP_PATTERN.matcher(address).find() ? "http://" + address : address;
@@ -40,6 +43,7 @@ public class AudioNodeEntryImpl implements AudioNodeEntry {
         this.rest = rest == 0 ? client.getGlobalRestPort() : rest;
         this.ws = ws == 0 ? client.getGlobalWebSocketPort() : ws;
         this.isUsingVersionThree = isUsingVersionThree;
+        this.initializer = initializer;
     }
     @Override
     @Nonnull
@@ -79,5 +83,10 @@ public class AudioNodeEntryImpl implements AudioNodeEntry {
     @Override
     public boolean isUsingLavalinkVersionThree() {
         return isUsingVersionThree;
+    }
+    @Nullable
+    @Override
+    public SocketInitializer getSocketInitializer() {
+        return initializer;
     }
 }

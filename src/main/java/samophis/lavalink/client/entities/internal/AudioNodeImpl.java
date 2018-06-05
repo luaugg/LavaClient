@@ -61,9 +61,11 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         this.reconnectAttempts = new AtomicInteger(0);
         this.usingVersionThree = false;
         try {
-            this.socket = new WebSocketFactory()
-                    .createSocket(entry.getWebSocketAddress() + ":" + entry.getWebSocketPort())
-                    .addListener(this)
+            WebSocket socket = new WebSocketFactory().createSocket(entry.getWebSocketAddress() + ":" + entry.getWebSocketPort());
+            SocketInitializer init = entry.getSocketInitializer();
+            if (init != null)
+                socket = Asserter.requireNotNull(init.initialize(socket));
+            this.socket = socket.addListener(this)
                     .addHeader("Authorization", entry.getPassword())
                     .addHeader("Num-Shards", String.valueOf(client.getShardCount()))
                     .addHeader("User-Id", String.valueOf(client.getUserId()))

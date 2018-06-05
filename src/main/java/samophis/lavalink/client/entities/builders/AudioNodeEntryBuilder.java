@@ -18,6 +18,7 @@ package samophis.lavalink.client.entities.builders;
 
 import samophis.lavalink.client.entities.AudioNodeEntry;
 import samophis.lavalink.client.entities.LavaClient;
+import samophis.lavalink.client.entities.SocketInitializer;
 import samophis.lavalink.client.entities.internal.AudioNodeEntryImpl;
 import samophis.lavalink.client.util.Asserter;
 
@@ -28,7 +29,8 @@ public class AudioNodeEntryBuilder {
     private String address, password;
     private int restPort, wsPort;
     private boolean isUsingVersionThree;
-    @SuppressWarnings("WeakerAccess")
+    private SocketInitializer initializer;
+    @SuppressWarnings({"deprecation", "WeakerAccess"})
     public AudioNodeEntryBuilder(@Nonnull LavaClient client) {
         this.client = Asserter.requireNotNull(client);
         this.isUsingVersionThree = client.isGloballyUsingLavalinkVersionThree();
@@ -49,6 +51,10 @@ public class AudioNodeEntryBuilder {
         this.wsPort = wsPort;
         return this;
     }
+    public AudioNodeEntryBuilder setSocketInitializer(SocketInitializer initializer) {
+        this.initializer = initializer;
+        return this;
+    }
     @Deprecated
     // LavaClient automatically detects if a node is running v3 based on response headers.
     // This serves no use besides compatibility with older v3 nodes.
@@ -57,6 +63,6 @@ public class AudioNodeEntryBuilder {
         return this;
     }
     public AudioNodeEntry build() {
-        return new AudioNodeEntryImpl(client, address, password, restPort, wsPort, isUsingVersionThree);
+        return new AudioNodeEntryImpl(client, address, password, restPort, wsPort, isUsingVersionThree, initializer);
     }
 }
