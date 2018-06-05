@@ -17,7 +17,6 @@
 package samophis.lavalink.client.entities.internal;
 
 import com.jsoniter.JsonIterator;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -33,7 +32,6 @@ import samophis.lavalink.client.entities.*;
 import samophis.lavalink.client.entities.messages.server.TrackLoadResult;
 import samophis.lavalink.client.exceptions.HttpRequestException;
 import samophis.lavalink.client.util.Asserter;
-import samophis.lavalink.client.util.LavaClientUtil;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -76,9 +74,10 @@ public class LavaHttpManagerImpl implements LavaHttpManager {
         } catch (UnsupportedEncodingException exc) {
             throw new HttpRequestException(exc);
         }
-        AudioNodeEntry node = LavaClient.getBestNode().getEntry();
-        HttpGet request = new HttpGet(node.getHttpAddress() + ":" + node.getRestPort() + "/loadtracks?identifier=" + identifier);
-        request.addHeader("Authorization", node.getPassword());
+        AudioNode node = LavaClient.getBestNode();
+        AudioNodeEntry entry = node.getEntry();
+        HttpGet request = new HttpGet(entry.getHttpAddress() + ":" + entry.getRestPort() + "/loadtracks?identifier=" + identifier);
+        request.addHeader("Authorization", entry.getPassword());
         http.execute(request, new FutureCallback<HttpResponse>() {
             @Override
             public void completed(HttpResponse result) {

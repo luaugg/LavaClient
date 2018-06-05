@@ -48,7 +48,8 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
     private final AudioNodeEntry entry;
     private WebSocket socket;
     private Statistics statistics;
-    private AtomicInteger reconnectInterval;
+    private AtomicInteger reconnectInterval, reconnectAttempts;
+    private volatile boolean usingVersionThree;
     @SuppressWarnings("WeakerAccess")
     public AudioNodeImpl(@Nonnull LavaClient client, @Nonnull AudioNodeEntry entry) {
         Asserter.requireNotNull(client);
@@ -57,10 +58,14 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         this.balancer = new LoadBalancerImpl(this);
         this.entry = entry;
         this.reconnectInterval = new AtomicInteger(1000);
+        this.reconnectAttempts = new AtomicInteger(0);
+        this.usingVersionThree = false;
         try {
-            this.socket = new WebSocketFactory()
-                    .createSocket(entry.getWebSocketAddress() + ":" + entry.getWebSocketPort())
-                    .addListener(this)
+            WebSocket socket = new WebSocketFactory().createSocket(entry.getWebSocketAddress() + ":" + entry.getWebSocketPort());
+            SocketInitializer init = entry.getSocketInitializer();
+            if (init != null)
+                socket = Asserter.requireNotNull(init.initialize(socket));
+            this.socket = socket.addListener(this)
                     .addHeader("Authorization", entry.getPassword())
                     .addHeader("Num-Shards", String.valueOf(client.getShardCount()))
                     .addHeader("User-Id", String.valueOf(client.getUserId()))
@@ -87,8 +92,15 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
     }
     @Override
     public void onConnected(WebSocket websocket, Map<String, List<String>> headers) {
+        if (reconnectAttempts.get() == 0)
+            LOGGER.info("Connected!");
+        else
+            LOGGER.info("Connected after {} Reconnect Attempt(s)!", reconnectAttempts.get());
+        List<String> found = headers.get("Lavalink-Major-Version");
+        this.usingVersionThree = (found != null && found.get(0).equals("3"));
         client.getPlayers().forEach(player -> player.setNode(LavaClient.getBestNode()));
         reconnectInterval.set(1000);
+        reconnectAttempts.set(0);
     }
     @Override
     public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
@@ -100,10 +112,11 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         int code = closedByServer ? serverCloseFrame.getCloseCode() : clientCloseFrame.getCloseCode();
         if (closedByServer) {
             if (code == 1000)
-                LOGGER.info("Lavalink-Server ({}:{}) closed the connection gracefully with the reason: {}", entry.getWebSocketAddress(), entry.getWebSocketPort(), reason);
+                LOGGER.info("Lavalink Server - {}:{} - closed the connection gracefully with the reason: {}", entry.getWebSocketAddress(), entry.getWebSocketPort(), reason);
             else {
-                LOGGER.warn("Lavalink-Server ({}:{}) closed the connection unexpectedly with the reason: {}", entry.getWebSocketAddress(), entry.getWebSocketPort(), reason);
+                LOGGER.warn("Lavalink Server - {}:{} - closed the connection unexpectedly with the reason: {}", entry.getWebSocketAddress(), entry.getWebSocketPort(), reason);
                 int time = reconnectInterval.getAndSet(Math.min(reconnectInterval.get() * 2, 64000));
+                LOGGER.info("Reconnect Attempt #{}: Attempting to reconnect in {}ms...", reconnectAttempts.incrementAndGet(), time);
                 try {
                     Thread.sleep(time);
                 } catch (InterruptedException exc) {
@@ -194,5 +207,11 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
     @Nonnull
     public WebSocket getSocket() {
         return socket;
+    }
+    @Override
+    @SuppressWarnings("deprecation")
+    // fallback on client-set v3 if usingVersionThree is false (in the rare case that someone is running an older version of v3)
+    public boolean isUsingLavalinkVersionThree() {
+        return usingVersionThree || entry.isUsingLavalinkVersionThree();
     }
 }

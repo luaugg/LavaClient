@@ -18,6 +18,7 @@ package samophis.lavalink.client.entities;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Represents an entry for an {@link AudioNode AudioNode} with configuration options.
@@ -85,8 +86,16 @@ public interface AudioNodeEntry {
 
     /**
      * Returns whether or not the {@link AudioNode AudioNode} this entry represents is running Lavalink Server v3.
-     * <br><p>If this value is true, any {@link AudioWrapper AudioWrapper} returned from loading tracks will be missing everything besides the track list.</p>
+     * <br><p>If this value is true, any {@link AudioWrapper AudioWrapper} returned from loading tracks will be missing everything besides the track list.
+     * <br>Deprecated since v1.2 as the newest versions of Lavalink v3 report their version server-side.</p>
      * @return Whether or not this node is running Lavalink Server v3.
      */
+    @Deprecated
     boolean isUsingLavalinkVersionThree();
+
+    /**
+     * Fetches the <b>possibly-null</b> {@link SocketInitializer SocketInitializer} used to "initialize" a LavaClient WebSocket connection.
+     * @return The <b>possibly-null</b> {@link SocketInitializer SocketInitializer} attached to this node entry.
+     */
+    @Nullable SocketInitializer getSocketInitializer();
 }

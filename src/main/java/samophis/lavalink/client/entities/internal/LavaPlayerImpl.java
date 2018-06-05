@@ -155,6 +155,7 @@ public class LavaPlayerImpl implements LavaPlayer {
     public void playTrack(@Nonnull String identifier, @Nonnegative long startTime, long endTime) {
         Asserter.requireNotNegative(startTime);
         TrackDataPair pair = client.getIdentifierCache().getIfPresent(identifier);
+        setNode(LavaClient.getBestNode());
         if (pair == null) {
             client.getHttpManager().resolveTracks(identifier, wrapper -> {
                 List<TrackDataPair> tracks = wrapper.getLoadedTracks();
