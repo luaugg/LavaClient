@@ -41,4 +41,11 @@ public interface LavaHttpManager {
      * @throws NullPointerException If the provided identifier or callback are {@code null}.
      */
     void resolveTracks(@Nonnull String identifier, @Nonnull Consumer<AudioWrapper> callback);
+
+    /**
+     * Shuts down the internal HTTP Client used to make requests in the first place.
+     * <br><p>This is called by the {@link LavaClient#shutdown()} method too.</p>
+     * @throws IllegalStateException If this manager has already been shut-down.
+     */
+    void shutdown();
 }

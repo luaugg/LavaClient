@@ -217,6 +217,13 @@ public interface LavaClient {
     Long2ObjectMap<LavaPlayer> getPlayerMap();
 
     /**
+     * Shuts down LavaClient (also resetting the state).
+     * <br><p>This method removes and disconnects from all {@link AudioNode AudioNodes} and additionally shuts down the attached {@link LavaHttpManager LavaHttpManager}.</p>
+     * @throws IllegalStateException If this client has already been shutdown.
+     */
+    void shutdown();
+
+    /**
      * Fetches the {@link AudioNode AudioNode} with the least amount of load on it, used to balance the load of {@link LavaPlayer LavaPlayers} on different nodes.
      * @return The best {@link AudioNode AudioNode} to connect to.
      * @throws IllegalStateException If no Lavalink node exists or is available.
