@@ -25,13 +25,16 @@ import samophis.lavalink.client.util.Asserter;
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.function.Consumer;
 
 public class EventWaiterImpl implements EventWaiter {
     private final AudioNode node;
+    private final Consumer<AudioNode> callback;
     private final long guild_id;
     private String session_id, token, endpoint;
-    public EventWaiterImpl(@Nonnull AudioNode node, @Nonnegative long guild_id) {
+    public EventWaiterImpl(@Nonnull AudioNode node, @Nullable Consumer<AudioNode> callback, @Nonnegative long guild_id) {
         this.node = Asserter.requireNotNull(node);
+        this.callback = callback;
         this.guild_id = Asserter.requireNotNegative(guild_id);
     }
     @Nullable
@@ -48,6 +51,11 @@ public class EventWaiterImpl implements EventWaiter {
     @Override
     public String getEndpoint() {
         return endpoint;
+    }
+    @Nullable
+    @Override
+    public Consumer<AudioNode> getCallback() {
+        return callback;
     }
     @Nonnull
     @Override
@@ -75,5 +83,7 @@ public class EventWaiterImpl implements EventWaiter {
     @Override
     public void tryConnect() {
         node.getSocket().sendText(JsonStream.serialize(new VoiceUpdate(guild_id, session_id, token, endpoint)));
+        if (callback != null)
+            callback.accept(node);
     }
 }

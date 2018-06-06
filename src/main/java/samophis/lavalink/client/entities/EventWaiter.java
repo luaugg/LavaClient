@@ -116,7 +116,7 @@ public interface EventWaiter {
 
     @Nonnull
     static EventWaiter from(@Nullable AudioNode node, @Nullable Consumer<AudioNode> callback, @Nonnegative long guild_id) {
-        return new EventWaiterImpl(node == null ? LavaClient.getBestNode() : node, guild_id);
+        return new EventWaiterImpl(node == null ? LavaClient.getBestNode() : node, callback, guild_id);
     }
 
     /**
