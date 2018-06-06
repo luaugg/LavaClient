@@ -24,6 +24,7 @@ import samophis.lavalink.client.util.Asserter;
 
 import javax.annotation.Nonnull;
 
+@SuppressWarnings("unused")
 public class AudioNodeEntryBuilder {
     private final LavaClient client;
     private String address, password;
@@ -47,7 +48,12 @@ public class AudioNodeEntryBuilder {
         this.restPort = restPort;
         return this;
     }
+    @Deprecated
     public AudioNodeEntryBuilder setWsPort(int wsPort) {
+        this.wsPort = wsPort;
+        return this;
+    }
+    public AudioNodeEntryBuilder setWebSocketPort(int wsPort) {
         this.wsPort = wsPort;
         return this;
     }
