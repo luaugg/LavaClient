@@ -44,6 +44,7 @@ public class LavaClientImpl implements LavaClient {
     private final long expireWriteMs, expireAccessMs, userId;
     private final boolean usingLavalinkVersionThree;
     private final Cache<String, TrackDataPair> identifierCache;
+    private boolean isShutdown;
     public LavaClientImpl(String password, int restPort, int wsPort, int shards, long expireWriteMs, long expireAccessMs, long userId, boolean usingLavalinkVersionThree,
                           List<AudioNodeEntry> entries) {
         this.manager = new LavaHttpManagerImpl(this);
@@ -62,6 +63,7 @@ public class LavaClientImpl implements LavaClient {
                 .expireAfterAccess(expireAccessMs, TimeUnit.MILLISECONDS)
                 .build();
         entries.forEach(entry -> NODES.put(entry.getRawAddress() + entry.getWebSocketPort(), new AudioNodeImpl(this, entry)));
+        this.isShutdown = false;
     }
     @Nonnull
     @Override
@@ -166,5 +168,14 @@ public class LavaClientImpl implements LavaClient {
     @Override
     public Long2ObjectMap<LavaPlayer> getPlayerMap() {
         return Long2ObjectMaps.unmodifiable(PLAYERS);
+    }
+    @Override
+    public void shutdown() {
+        if (isShutdown)
+            throw new IllegalStateException("This LavaClient instance is already shutdown!");
+        isShutdown = true;
+        PLAYERS.values().forEach(LavaPlayer::destroyPlayer);
+        NODES.values().forEach(this::removeNode);
+        manager.shutdown();
     }
 }

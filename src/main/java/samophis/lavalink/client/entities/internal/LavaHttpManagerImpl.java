@@ -46,6 +46,7 @@ public class LavaHttpManagerImpl implements LavaHttpManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(LavaHttpManagerImpl.class);
     private final CloseableHttpAsyncClient http;
     private final LavaClient client;
+    private boolean isShutdown;
     @SuppressWarnings("WeakerAccess")
     public LavaHttpManagerImpl(@Nonnull LavaClient client) {
         this.http = HttpAsyncClients.createDefault();
@@ -125,5 +126,17 @@ public class LavaHttpManagerImpl implements LavaHttpManager {
                 throw new HttpRequestException("HTTP Request cancelled while waiting for a response!");
             }
         });
+    }
+
+    @Override
+    public void shutdown() {
+        if (isShutdown)
+            throw new IllegalStateException("This HTTP Manager has already been shut-down!");
+        isShutdown = true;
+        try {
+            http.close();
+        } catch (IOException exc) {
+            LOGGER.error("Error when closing HTTP Client!", exc);
+        }
     }
 }
