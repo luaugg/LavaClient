@@ -2,6 +2,8 @@
 [![](https://jitpack.io/v/SamOphis/LavaClient.svg)](https://jitpack.io/#SamOphis/LavaClient)
 [![Build Status](https://travis-ci.org/SamOphis/LavaClient.svg?branch=master)](https://travis-ci.org/SamOphis/LavaClient)
 
+[Please check out the Wiki as well, it goes into much more accurate and informative detail!](https://github.com/SamOphis/LavaClient/wiki)
+
 LavaClient is a fast client implementation for [Lavalink](https://github.com/Frederikam/Lavalink) written in Java 8, built from the ground up for speed, abstraction and ease-of-use. Although it can be used normally as is, since it lacks specific references to Java Discord API Libraries, certain things (such as channel objects, etc.) are not represented except for their numeric ID's.
 
 This is used in production along with a non-specific command library by my [Kunou](https://github.com/KunouMain) project. You must have more than "a ping-pong bot" experience/knowledge to properly use LavaClient.
@@ -81,6 +83,7 @@ The user still has to set the information in the first place, but the `EventWait
 EventWaiter waiter = EventWaiter.from(guild_id);
 waiter.setSessionIdAndTryConnect(session_id); // Sets the Session ID and connects ONLY if the Token and Endpoint have already been set.
 waiter.setServerAndTryConnect(voice_token, endpoint); // Sets the Token and Endpoint and connects ONLY if the Session ID has already been set.
+// As of v1.3, you can specify a callback in the `from` method for follow-up code that preserves order.
 ```
 
 ```java
