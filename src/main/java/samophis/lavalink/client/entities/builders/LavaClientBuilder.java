@@ -69,7 +69,7 @@ public class LavaClientBuilder {
         return addEntry(new AudioNodeEntryBuilder(client)
                 .setAddress(address)
                 .setRestPort(restPort)
-                .setWsPort(wsPort)
+                .setWebSocketPort(wsPort)
                 .setPassword(password)
                 .build()
         );
