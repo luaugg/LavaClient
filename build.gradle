@@ -35,6 +35,21 @@ shadowJar {
     classifier = "withDependencies"
 }
 
+build {
+    dependsOn clean
+    dependsOn jar
+    dependsOn javadocJar
+    dependsOn sourcesJar
+    dependsOn shadowJar
+    dependsOn updateDocs
+    dependsOn test
+
+    jar.mustRunAfter clean
+    javadocJar.mustRunAfter jar
+    sourcesJar.mustRunAfter javadocJar
+    shadowJar.mustRunAfter sourcesJar
+}
+
 artifacts {
     archives sourcesJar
     archives javadocJar
