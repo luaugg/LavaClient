@@ -18,6 +18,8 @@ package samophis.lavalink.client.entities;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import samophis.lavalink.client.entities.internal.LavaClientImpl;
 import samophis.lavalink.client.entities.internal.LoadBalancerImpl;
 
@@ -36,40 +38,46 @@ import java.util.Map;
  */
 
 @SuppressWarnings("unused")
-public interface LavaClient {
+public abstract class LavaClient {
     /** The default port to use for the Lavalink-Server REST API. */
-    int REST_PORT_DEFAULT = 2333;
+    public static final int REST_PORT_DEFAULT = 2333;
     /** The default port to use for the Lavalink-Server WebSocket. */
-    int WS_PORT_DEFAULT = 80;
+    public static final int WS_PORT_DEFAULT = 80;
     /** The default password to use for the Lavalink-Server. */
-    String PASSWORD_DEFAULT = "youshallnotpass";
+    public static final String PASSWORD_DEFAULT = "youshallnotpass";
     /** The default cache expire-after-write time, in milliseconds. */
-    long DEFAULT_CACHE_EXPIRE_WRITE = 1200000;
+    public static final long DEFAULT_CACHE_EXPIRE_WRITE = 1200000;
     /** The default cache expire-after-access time, in milliseconds. */
-    long DEFAULT_CACHE_EXPIRE_ACCESS = 900000;
+    public static final long DEFAULT_CACHE_EXPIRE_ACCESS = 900000;
     /** Whether nodes should by default be treated as using Lavalink v3. */
-    boolean VERSION_THREE_ENABLED = false;
+    public static final boolean VERSION_THREE_ENABLED = false;
 
+    protected final Map<String, AudioNode> nodes;
+    protected final Long2ObjectMap<LavaPlayer> players;
+    protected LavaClient() {
+        this.nodes = new Object2ObjectOpenHashMap<>();
+        this.players = new Long2ObjectOpenHashMap<>();
+    }
     /**
      * Used to fetch an unmodifiable list of all the {@link LavaPlayer LavaPlayers} associated with this client.
      * @return An unmodifiable view of all the {@link LavaPlayer LavaPlayers} this client contains.
      */
     @Nonnull
-    List<LavaPlayer> getPlayers();
+    public abstract List<LavaPlayer> getPlayers();
 
     /**
      * Used to fetch an unmodifiable list of all the {@link AudioNode AudioNodes} this client can connect to.
      * @return An unmodifiable view of all the {@link AudioNode AudioNodes} this client can connect to.
      */
     @Nonnull
-    List<AudioNode> getAudioNodes();
+    public abstract List<AudioNode> getAudioNodes();
 
     /**
      * Used to fetch the {@link LavaHttpManager LavaHttpManager} associated with this client, which is used to get track data from an identifier.
      * @return The {@link LavaHttpManager LavaHttpManager} used to grab track data from an identifier.
      */
     @Nonnull
-    LavaHttpManager getHttpManager();
+    public abstract LavaHttpManager getHttpManager();
 
     /**
      * Fetches an {@link AudioNode AudioNode} by address and port. This operation is extremely fast as it only looks up the entry in a HashMap.
@@ -78,7 +86,7 @@ public interface LavaClient {
      * @return A <b>possibly-null</b> {@link AudioNode AudioNode} associated with the provided server address and WebSocket port.
      */
     @Nullable
-    AudioNode getNodeByIdentifier(String address, int websocketPort);
+    public abstract AudioNode getNodeByIdentifier(String address, int websocketPort);
 
     /**
      * Fetches a {@link LavaPlayer LavaPlayer} instance by Guild ID, creating one if it doesn't already exist.
@@ -86,7 +94,7 @@ public interface LavaClient {
      * @return A <b>never-null</b> {@link LavaPlayer LavaPlayer} instance associated with the Guild ID.
      */
     @Nonnull
-    LavaPlayer getPlayerByGuildId(long guild_id);
+    public abstract LavaPlayer getPlayerByGuildId(long guild_id);
 
     /**
      * Fetches the default password for all {@link AudioNode AudioNodes} the client has access to.
@@ -94,7 +102,7 @@ public interface LavaClient {
      * @return The default password specified for this LavaClient instance.
      */
     @Nonnull
-    String getGlobalServerPassword();
+    public abstract String getGlobalServerPassword();
 
     /**
      * Fetches the amount of time from which track data will be removed from the cache after being written without being accessed.
@@ -106,7 +114,7 @@ public interface LavaClient {
      * @see LavaClient#getCacheExpireAfterAccessMs()
      */
     @Nonnegative
-    long getCacheExpireAfterWriteMs();
+    public abstract long getCacheExpireAfterWriteMs();
 
     /**
      * Fetches the amount of time from which track data will removed from the cache after being accessed (after being written).
@@ -118,14 +126,14 @@ public interface LavaClient {
      * @see LavaClient#getCacheExpireAfterWriteMs()
      */
     @Nonnegative
-    long getCacheExpireAfterAccessMs();
+    public abstract long getCacheExpireAfterAccessMs();
     /**
      * Fetches the default WebSocket port for all {@link AudioNode AudioNodes} the client has access to.
      * <br><p>This value equates to {@value WS_PORT_DEFAULT} if it's not specified during the construction of the LavaClient instance.</p>
      * @return The default WebSocket port for this LavaClient instance.
      */
     @Nonnegative
-    int getGlobalWebSocketPort();
+    public abstract int getGlobalWebSocketPort();
 
     /**
      * Fetches the default REST API port for all {@link AudioNode AudioNodes} the client has access to.
@@ -133,7 +141,7 @@ public interface LavaClient {
      * @return The default REST API port for this LavaClient instance.
      */
     @Nonnegative
-    int getGlobalRestPort();
+    public abstract int getGlobalRestPort();
 
     /**
      * Fetches whether LavaClient should by-default treat all {@link AudioNode AudioNodes} it has access to as using Lavalink Server v3.
@@ -142,21 +150,21 @@ public interface LavaClient {
      * @return Whether LavaClient should treat all nodes as using Lavalink Server v3.
      */
     @Deprecated
-    boolean isGloballyUsingLavalinkVersionThree();
+    public abstract  boolean isGloballyUsingLavalinkVersionThree();
 
     /**
      * Fetches the amount of shards specified during the construction of the LavaClient instance.
      * @return The amount of shards LavaClient is aware of and passes to {@link AudioNode AudioNodes} when connecting.
      */
     @Nonnegative
-    int getShardCount();
+    public abstract int getShardCount();
 
     /**
      * Fetches the User ID of the Bot User specified during the construction of the LavaClient instance.
      * @return The User ID of the Bot User which LavaClient passes to {@link AudioNode AudioNodes} when connecting.
      */
     @Nonnegative
-    long getUserId();
+    public abstract long getUserId();
 
     /**
      * Adds a <b>not-null</b> {@link AudioNode AudioNode} and opens a connection to it <b>(if it isn't already open)</b>.
@@ -164,7 +172,7 @@ public interface LavaClient {
      * @param node The <b>not-null</b> {@link AudioNode AudioNode} to add.
      * @throws NullPointerException If the provided {@link AudioNode node} was {@code null}.
      */
-    void addNode(@Nonnull AudioNode node);
+    public abstract void addNode(@Nonnull AudioNode node);
 
     /**
      * Attempts to remove a <b>not-null</b> {@link AudioNode AudioNode}.
@@ -173,14 +181,14 @@ public interface LavaClient {
      * @param node The <b>not-null</b> {@link AudioNode AudioNode} to remove.
      * @throws NullPointerException If the provided {@link AudioNode AudioNode} was {@code null}.
      */
-    void removeNode(@Nonnull AudioNode node);
+    public abstract void removeNode(@Nonnull AudioNode node);
 
     /**
      * Adds a <b>not-null</b> {@link AudioNode AudioNode} and opens a connection to it based on the information provided by the {@link AudioNodeEntry AudioNodeEntry}.
      * @param entry The {@link AudioNodeEntry AudioNodeEntry} containing the address, the port, etc. of the {@link AudioNode AudioNode}.
      * @throws NullPointerException If the provided {@link AudioNodeEntry entry} was {@code null}.
      */
-    void addEntry(@Nonnull AudioNodeEntry entry);
+    public abstract void addEntry(@Nonnull AudioNodeEntry entry);
 
     /**
      * Attempts to remove the {@link AudioNode AudioNode} associated with the provided, <b>not-null</b> {@link AudioNodeEntry AudioNodeEntry}.
@@ -188,7 +196,7 @@ public interface LavaClient {
      * @param entry The <b>not-null</b> {@link AudioNodeEntry AudioNodeEntry} used to identify and remove the associated {@link AudioNode AudioNode}.
      * @throws NullPointerException If the provided {@link AudioNodeEntry AudioNodeEntry} was {@code null}.
      */
-    void removeEntry(@Nonnull AudioNodeEntry entry);
+    public abstract void removeEntry(@Nonnull AudioNodeEntry entry);
 
     /**
      * Attempts to remove the {@link AudioNode AudioNode} associated with a provided server address and port.
@@ -198,7 +206,7 @@ public interface LavaClient {
      * @throws NullPointerException If the provided server address was {@code null}.
      * @throws IllegalArgumentException If the provided WebSocket port was negative.
      */
-    void removeEntry(@Nonnull String serverAddress, @Nonnegative int websocketPort);
+    public abstract void removeEntry(@Nonnull String serverAddress, @Nonnegative int websocketPort);
 
     /**
      * Fetches the internal identifier cache used by LavaClient to cut down the impact of loading the same sources in quick succession.
@@ -206,7 +214,7 @@ public interface LavaClient {
      * @return the internal cache LavaClient uses to cut down repeated song loading impact.
      */
     @Nonnull
-    Cache<String, TrackDataPair> getIdentifierCache();
+    public abstract Cache<String, TrackDataPair> getIdentifierCache();
 
     /**
      * Fetches an <b>unmodifiable</b> view of the internal player map.
@@ -214,14 +222,14 @@ public interface LavaClient {
      * @return An <b>unmodifiable</b> view of the internal player map.
      */
     @Nonnull
-    Long2ObjectMap<LavaPlayer> getPlayerMap();
+    public abstract Long2ObjectMap<LavaPlayer> getPlayerMap();
 
     /**
      * Shuts down LavaClient (also resetting the state).
      * <br><p>This method removes and disconnects from all {@link AudioNode AudioNodes} and additionally shuts down the attached {@link LavaHttpManager LavaHttpManager}.</p>
      * @throws IllegalStateException If this client has already been shutdown.
      */
-    void shutdown();
+    public abstract void shutdown();
 
     /**
      * Fetches the {@link AudioNode AudioNode} with the least amount of load on it, used to balance the load of {@link LavaPlayer LavaPlayers} on different nodes.
@@ -229,20 +237,5 @@ public interface LavaClient {
      * @throws IllegalStateException If no Lavalink node exists or is available.
      */
     @Nonnull
-    static AudioNode getBestNode() {
-        AudioNode node = null;
-        int record = Integer.MAX_VALUE;
-        for (AudioNode nd : LavaClientImpl.NODES.values()) {
-            int penalty = ((LoadBalancerImpl) nd.getBalancer()).initWithNode().getTotalPenalty();
-            if (penalty < record) {
-                node = nd;
-                record = penalty;
-            }
-        }
-        if (node == null)
-            throw new IllegalStateException("No available Lavalink nodes!");
-        if (!node.isAvailable())
-            throw new IllegalStateException("Lavalink node wasn't available!");
-        return node;
-    }
+    public abstract AudioNode getBestNode();
 }

@@ -20,8 +20,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
 import samophis.lavalink.client.entities.*;
@@ -32,12 +30,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class LavaClientImpl implements LavaClient {
-    public static final Map<String, AudioNode> NODES = new Object2ObjectOpenHashMap<>();
-    private static final Long2ObjectMap<LavaPlayer> PLAYERS = new Long2ObjectOpenHashMap<>();
+public class LavaClientImpl extends LavaClient {
     private final LavaHttpManager manager;
     private final String password;
     private final int restPort, wsPort, shards;
@@ -47,6 +42,7 @@ public class LavaClientImpl implements LavaClient {
     private boolean isShutdown;
     public LavaClientImpl(String password, int restPort, int wsPort, int shards, long expireWriteMs, long expireAccessMs, long userId, boolean usingLavalinkVersionThree,
                           List<AudioNodeEntry> entries) {
+        super();
         this.manager = new LavaHttpManagerImpl(this);
         this.password = Asserter.requireNotNull(password);
         this.restPort = Asserter.requireNotNegative(restPort);
@@ -62,7 +58,7 @@ public class LavaClientImpl implements LavaClient {
                 .expireAfterWrite(expireWriteMs, TimeUnit.MILLISECONDS)
                 .expireAfterAccess(expireAccessMs, TimeUnit.MILLISECONDS)
                 .build();
-        entries.forEach(entry -> NODES.put(entry.getRawAddress() + entry.getWebSocketPort(), new AudioNodeImpl(this, entry)));
+        entries.forEach(entry -> nodes.put(entry.getRawAddress() + entry.getWebSocketPort(), new AudioNodeImpl(this, entry)));
         this.isShutdown = false;
     }
     @Nonnull
@@ -112,52 +108,52 @@ public class LavaClientImpl implements LavaClient {
     @Override
     public void addNode(@Nonnull AudioNode node) {
         AudioNodeEntry entry = Asserter.requireNotNull(node).getEntry();
-        NODES.put(entry.getRawAddress() + entry.getWebSocketPort(), node);
+        nodes.put(entry.getRawAddress() + entry.getWebSocketPort(), node);
     }
     @Override
     public void addEntry(@Nonnull AudioNodeEntry entry) {
         Asserter.requireNotNull(entry);
-        NODES.put(entry.getRawAddress() + entry.getWebSocketPort(), new AudioNodeImpl(this, entry));
+        nodes.put(entry.getRawAddress() + entry.getWebSocketPort(), new AudioNodeImpl(this, entry));
     }
     @Override
     public void removeEntry(@Nonnull AudioNodeEntry entry) {
         Asserter.requireNotNull(entry);
-        AudioNode node = NODES.remove(entry.getRawAddress() + entry.getWebSocketPort());
+        AudioNode node = nodes.remove(entry.getRawAddress() + entry.getWebSocketPort());
         if (node != null)
             node.getSocket().disconnect(1000, "Client requested removal of entry!");
     }
     @Override
     public void removeEntry(@Nonnull String serverAddress, int websocketPort) {
-        AudioNode node = NODES.remove(Asserter.requireNotNull(serverAddress) + Asserter.requireNotNegative(websocketPort));
+        AudioNode node = nodes.remove(Asserter.requireNotNull(serverAddress) + Asserter.requireNotNegative(websocketPort));
         if (node != null)
             node.getSocket().disconnect(1000, "Client requested removal of entry!");
     }
     @Override
     public void removeNode(@Nonnull AudioNode node) {
         AudioNodeEntry entry = Asserter.requireNotNull(node).getEntry();
-        AudioNode nd = NODES.remove(entry.getRawAddress() + entry.getWebSocketPort());
+        AudioNode nd = nodes.remove(entry.getRawAddress() + entry.getWebSocketPort());
         if (nd != null)
             nd.getSocket().disconnect(1000, "Client requested removal of node!");
     }
     @Nonnull
     @Override
     public List<AudioNode> getAudioNodes() {
-        return Collections.unmodifiableList((List<AudioNode>) NODES.values());
+        return Collections.unmodifiableList((List<AudioNode>) nodes.values());
     }
     @Nonnull
     @Override
     public List<LavaPlayer> getPlayers() {
-        return ObjectLists.unmodifiable((ObjectList<LavaPlayer>) PLAYERS.values());
+        return ObjectLists.unmodifiable((ObjectList<LavaPlayer>) players.values());
     }
     @Nonnull
     @Override
     public LavaPlayer getPlayerByGuildId(@Nonnegative long guild_id) {
-        return PLAYERS.computeIfAbsent(Asserter.requireNotNegative(guild_id), ignored -> new LavaPlayerImpl(this, ignored));
+        return players.computeIfAbsent(Asserter.requireNotNegative(guild_id), ignored -> new LavaPlayerImpl(this, ignored));
     }
     @Nullable
     @Override
     public AudioNode getNodeByIdentifier(@Nonnull String address, @Nonnegative int websocketPort) {
-        return NODES.get(Asserter.requireNotNull(address) + Asserter.requireNotNegative(websocketPort));
+        return nodes.get(Asserter.requireNotNull(address) + Asserter.requireNotNegative(websocketPort));
     }
     @Nonnull
     @Override
@@ -167,15 +163,33 @@ public class LavaClientImpl implements LavaClient {
     @Nonnull
     @Override
     public Long2ObjectMap<LavaPlayer> getPlayerMap() {
-        return Long2ObjectMaps.unmodifiable(PLAYERS);
+        return Long2ObjectMaps.unmodifiable(players);
     }
     @Override
     public void shutdown() {
         if (isShutdown)
             throw new IllegalStateException("This LavaClient instance is already shutdown!");
         isShutdown = true;
-        PLAYERS.values().forEach(LavaPlayer::destroyPlayer);
-        NODES.values().forEach(this::removeNode);
+        players.values().forEach(LavaPlayer::destroyPlayer);
+        nodes.values().forEach(this::removeNode);
         manager.shutdown();
+    }
+    @Nonnull
+    @Override
+    public AudioNode getBestNode() {
+        AudioNode node = null;
+        int record = Integer.MAX_VALUE;
+        for (AudioNode nd : nodes.values()) {
+            int penalty = ((LoadBalancerImpl) nd.getBalancer()).initWithNode().getTotalPenalty();
+            if (penalty < record) {
+                node = nd;
+                record = penalty;
+            }
+        }
+        if (node == null)
+            throw new IllegalStateException("No available Lavalink nodes!");
+        if (!node.isAvailable())
+            throw new IllegalStateException("Lavalink node wasn't available!");
+        return node;
     }
 }
