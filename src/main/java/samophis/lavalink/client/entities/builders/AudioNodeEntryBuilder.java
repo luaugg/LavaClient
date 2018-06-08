@@ -29,12 +29,10 @@ public class AudioNodeEntryBuilder {
     private final LavaClient client;
     private String address, password;
     private int restPort, wsPort;
-    private boolean isUsingVersionThree;
     private SocketInitializer initializer;
     @SuppressWarnings({"deprecation", "WeakerAccess"})
     public AudioNodeEntryBuilder(@Nonnull LavaClient client) {
         this.client = Asserter.requireNotNull(client);
-        this.isUsingVersionThree = client.isGloballyUsingLavalinkVersionThree();
     }
     public AudioNodeEntryBuilder setAddress(String address) {
         this.address = address;
@@ -48,11 +46,6 @@ public class AudioNodeEntryBuilder {
         this.restPort = restPort;
         return this;
     }
-    @Deprecated
-    public AudioNodeEntryBuilder setWsPort(int wsPort) {
-        this.wsPort = wsPort;
-        return this;
-    }
     public AudioNodeEntryBuilder setWebSocketPort(int wsPort) {
         this.wsPort = wsPort;
         return this;
@@ -61,14 +54,7 @@ public class AudioNodeEntryBuilder {
         this.initializer = initializer;
         return this;
     }
-    @Deprecated
-    // LavaClient automatically detects if a node is running v3 based on response headers.
-    // This serves no use besides compatibility with older v3 nodes.
-    public AudioNodeEntryBuilder setIsUsingVersionThree(boolean isUsingVersionThree) {
-        this.isUsingVersionThree = isUsingVersionThree;
-        return this;
-    }
     public AudioNodeEntry build() {
-        return new AudioNodeEntryImpl(client, address, password, restPort, wsPort, isUsingVersionThree, initializer);
+        return new AudioNodeEntryImpl(client, address, password, restPort, wsPort, initializer);
     }
 }

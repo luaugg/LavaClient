@@ -75,7 +75,7 @@ public class LavaHttpManagerImpl implements LavaHttpManager {
         } catch (UnsupportedEncodingException exc) {
             throw new HttpRequestException(exc);
         }
-        AudioNode node = LavaClient.getBestNode();
+        AudioNode node = client.getBestNode();
         AudioNodeEntry entry = node.getEntry();
         HttpGet request = new HttpGet(entry.getHttpAddress() + ":" + entry.getRestPort() + "/loadtracks?identifier=" + identifier);
         request.addHeader("Authorization", entry.getPassword());

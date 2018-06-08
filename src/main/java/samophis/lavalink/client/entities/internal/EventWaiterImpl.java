@@ -19,6 +19,7 @@ package samophis.lavalink.client.entities.internal;
 import com.jsoniter.output.JsonStream;
 import samophis.lavalink.client.entities.AudioNode;
 import samophis.lavalink.client.entities.EventWaiter;
+import samophis.lavalink.client.entities.LavaClient;
 import samophis.lavalink.client.entities.messages.client.VoiceUpdate;
 import samophis.lavalink.client.util.Asserter;
 
@@ -28,14 +29,21 @@ import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 public class EventWaiterImpl implements EventWaiter {
+    private final LavaClient client;
     private final AudioNode node;
     private final Consumer<AudioNode> callback;
     private final long guild_id;
     private String session_id, token, endpoint;
-    public EventWaiterImpl(@Nonnull AudioNode node, @Nullable Consumer<AudioNode> callback, @Nonnegative long guild_id) {
+    public EventWaiterImpl(@Nonnull LavaClient client, @Nonnull AudioNode node, @Nullable Consumer<AudioNode> callback, @Nonnegative long guild_id) {
+        this.client = Asserter.requireNotNull(client);
         this.node = Asserter.requireNotNull(node);
         this.callback = callback;
         this.guild_id = Asserter.requireNotNegative(guild_id);
+    }
+    @Nonnull
+    @Override
+    public LavaClient getClient() {
+        return client;
     }
     @Nullable
     @Override

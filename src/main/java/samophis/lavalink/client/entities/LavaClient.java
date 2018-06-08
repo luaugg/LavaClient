@@ -49,8 +49,6 @@ public abstract class LavaClient {
     public static final long DEFAULT_CACHE_EXPIRE_WRITE = 1200000;
     /** The default cache expire-after-access time, in milliseconds. */
     public static final long DEFAULT_CACHE_EXPIRE_ACCESS = 900000;
-    /** Whether nodes should by default be treated as using Lavalink v3. */
-    public static final boolean VERSION_THREE_ENABLED = false;
 
     protected final Map<String, AudioNode> nodes;
     protected final Long2ObjectMap<LavaPlayer> players;
@@ -142,15 +140,6 @@ public abstract class LavaClient {
      */
     @Nonnegative
     public abstract int getGlobalRestPort();
-
-    /**
-     * Fetches whether LavaClient should by-default treat all {@link AudioNode AudioNodes} it has access to as using Lavalink Server v3.
-     * <br><p>This value equates to {@value VERSION_THREE_ENABLED} if it's not specified during the construction of the LavaClient instance.
-     * <br>Deprecated since v1.2 as the newest versions of Lavalink v3 report their version server-side.</p>
-     * @return Whether LavaClient should treat all nodes as using Lavalink Server v3.
-     */
-    @Deprecated
-    public abstract  boolean isGloballyUsingLavalinkVersionThree();
 
     /**
      * Fetches the amount of shards specified during the construction of the LavaClient instance.

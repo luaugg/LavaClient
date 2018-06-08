@@ -37,11 +37,9 @@ public class LavaClientImpl extends LavaClient {
     private final String password;
     private final int restPort, wsPort, shards;
     private final long expireWriteMs, expireAccessMs, userId;
-    private final boolean usingLavalinkVersionThree;
     private final Cache<String, TrackDataPair> identifierCache;
     private boolean isShutdown;
-    public LavaClientImpl(String password, int restPort, int wsPort, int shards, long expireWriteMs, long expireAccessMs, long userId, boolean usingLavalinkVersionThree,
-                          List<AudioNodeEntry> entries) {
+    public LavaClientImpl(String password, int restPort, int wsPort, int shards, long expireWriteMs, long expireAccessMs, long userId, List<AudioNodeEntry> entries) {
         super();
         this.manager = new LavaHttpManagerImpl(this);
         this.password = Asserter.requireNotNull(password);
@@ -50,7 +48,6 @@ public class LavaClientImpl extends LavaClient {
         this.shards = Asserter.requireNotNegative(shards);
         this.expireWriteMs = Asserter.requireNotNegative(expireWriteMs);
         this.expireAccessMs = Asserter.requireNotNegative(expireAccessMs);
-        this.usingLavalinkVersionThree = usingLavalinkVersionThree;
         this.userId = Asserter.requireNotNegative(userId);
         this.identifierCache = Caffeine.newBuilder()
                 .initialCapacity(10)
@@ -100,10 +97,6 @@ public class LavaClientImpl extends LavaClient {
     @Override
     public long getUserId() {
         return userId;
-    }
-    @Override
-    public boolean isGloballyUsingLavalinkVersionThree() {
-        return usingLavalinkVersionThree;
     }
     @Override
     public void addNode(@Nonnull AudioNode node) {

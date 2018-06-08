@@ -17,6 +17,7 @@
 package samophis.lavalink.client.entities;
 
 import samophis.lavalink.client.entities.internal.EventWaiterImpl;
+import samophis.lavalink.client.util.Asserter;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
@@ -37,6 +38,13 @@ import java.util.function.Consumer;
 
 @SuppressWarnings("unused")
 public interface EventWaiter {
+    /**
+     * Fetches the {@link LavaClient LavaClient} instance specified during construction of this event waiter.
+     * @return The {@link LavaClient LavaClient} instance attached to this event waiter.
+     */
+    @Nonnull
+    LavaClient getClient();
+
     /**
      * Fetches the Session ID as set by the end-user. This may be {@code 'null'} at any given time.
      * @return The <b>possibly-null-or-invalid</b> Session ID as set by the end-user.
@@ -104,67 +112,75 @@ public interface EventWaiter {
      * Creates a new EventWaiter object for an associated {@link AudioNode AudioNode} and Guild ID.
      * <br><p>LavaClient will replace the node with the "best node" that has the least load on it if the node is {@code null}.
      * <br>This additionally allows a callback to be used once LavaClient attempts to send a Voice Update to Lavalink.</p>
+     * @param client The <b>not-null</b> {@link LavaClient LavaClient} instance used to get the best node.
      * @param node The <b>possibly-null</b> AudioNode to connect to.
      * @param callback The <b>possibly-null</b> callback to use right after LavaClient attempts to connect.
-     * @param guild_id The ID of the Guild to open an Audio Stream to.
+     * @param guild_id The <b>positive</b> ID of the Guild to open an Audio Stream to.
      * @return A new EventWaiter object with the provided {@link AudioNode AudioNode} and Guild ID.
+     * @throws NullPointerException If the provided client was {@code null}.
      * @throws IllegalArgumentException If the provided Guild ID was negative.
-     * @see EventWaiter#from(long)
-     * @see EventWaiter#from(AudioNode, long)
-     * @see EventWaiter#from(Consumer, long)
+     * @see EventWaiter#from(LavaClient, long)
+     * @see EventWaiter#from(LavaClient, AudioNode, long)
+     * @see EventWaiter#from(LavaClient, Consumer, long)
      */
 
     @Nonnull
-    static EventWaiter from(@Nullable AudioNode node, @Nullable Consumer<AudioNode> callback, @Nonnegative long guild_id) {
-        return new EventWaiterImpl(node == null ? LavaClient.getBestNode() : node, callback, guild_id);
+    static EventWaiter from(@Nonnull LavaClient client, @Nullable AudioNode node, @Nullable Consumer<AudioNode> callback, @Nonnegative long guild_id) {
+        return new EventWaiterImpl(client, node == null ? Asserter.requireNotNull(client).getBestNode() : node, callback, guild_id);
     }
 
     /**
      * Creates a new EventWaiter object for an associated {@link AudioNode AudioNode} and Guild ID.
      * <br><p>LavaClient will replace the node with the "best node" that has the least load on it if the node is {@code null}.</p>
+     * @param client The <b>not-null</b> {@link LavaClient LavaClient} instance used to get the best node.
      * @param node The <b>possibly-null</b> AudioNode to connect to.
-     * @param guild_id The ID of the Guild to open an Audio Stream to.
+     * @param guild_id The <b>positive</b> ID of the Guild to open an Audio Stream to.
      * @return A new EventWaiter object with the provided {@link AudioNode AudioNode} and Guild ID.
+     * @throws NullPointerException If the provided client was {@code null}.
      * @throws IllegalArgumentException If the provided Guild ID was negative.
-     * @see EventWaiter#from(long)
-     * @see EventWaiter#from(AudioNode, Consumer, long)
-     * @see EventWaiter#from(Consumer, long)
+     * @see EventWaiter#from(LavaClient, long)
+     * @see EventWaiter#from(LavaClient, AudioNode, Consumer, long)
+     * @see EventWaiter#from(LavaClient, Consumer, long)
      */
 
     @Nonnull
-    static EventWaiter from(@Nullable AudioNode node, @Nonnegative long guild_id) {
-        return from(node, null, guild_id);
+    static EventWaiter from(@Nonnull LavaClient client, @Nullable AudioNode node, @Nonnegative long guild_id) {
+        return from(client, node, null, guild_id);
     }
 
     /**
      * Creates a new EventWaiter using the "best node" that has the least load on it and an associated Guild ID.
-     * @param guild_id The ID of the Guild to open an Audio Stream to.
+     * @param client The <b>not-null</b> {@link LavaClient LavaClient} instance used to get the best node.
+     * @param guild_id The <b>positive</b> ID of the Guild to open an Audio Stream to.
      * @return A new EventWaiter object with the {@link AudioNode AudioNode} that has the least load on it and the associated Guild ID.
+     * @throws NullPointerException If the provided client was {@code null}.
      * @throws IllegalArgumentException If the provided Guild ID was negative.
-     * @see EventWaiter#from(AudioNode, Consumer, long)
-     * @see EventWaiter#from(AudioNode, long)
-     * @see EventWaiter#from(Consumer, long)
+     * @see EventWaiter#from(LavaClient, AudioNode, Consumer, long)
+     * @see EventWaiter#from(LavaClient, AudioNode, long)
+     * @see EventWaiter#from(LavaClient, Consumer, long)
      */
     @Nonnull
-    static EventWaiter from(@Nonnegative long guild_id) {
-        return from(null, null, guild_id);
+    static EventWaiter from(@Nonnull LavaClient client, @Nonnegative long guild_id) {
+        return from(client, null, null, guild_id);
     }
 
     /**
      * Creates a new EventWaiter object using the best {@link AudioNode AudioNode} and provied Guild ID.
      * <br><p>LavaClient will replace the node with the "best node" that has the least load on it if the node is {@code null}.
      * <br>This additionally allows a callback to be used once LavaClient attempts to send a Voice Update to Lavalink.</p>
+     * @param client The <b>not-null</b> {@link LavaClient LavaClient} instance used to fetch the best node.
      * @param callback The <b>possibly-null</b> callback to use right after LavaClient attempts to connect.
-     * @param guild_id The ID of the Guild to open an Audio Stream to.
+     * @param guild_id The <b>positive</b> ID of the Guild to open an Audio Stream to.
      * @return A new EventWaiter object with the provided {@link AudioNode AudioNode} and Guild ID.
+     * @throws NullPointerException If the provided client was {@code null}.
      * @throws IllegalArgumentException If the provided Guild ID was negative.
-     * @see EventWaiter#from(long)
-     * @see EventWaiter#from(AudioNode, long)
-     * @see EventWaiter#from(AudioNode, Consumer, long)
+     * @see EventWaiter#from(LavaClient, long)
+     * @see EventWaiter#from(LavaClient, AudioNode, long)
+     * @see EventWaiter#from(LavaClient, AudioNode, Consumer, long)
      */
 
     @Nonnull
-    static EventWaiter from(@Nullable Consumer<AudioNode> callback, @Nonnegative long guild_id) {
-        return from(null, callback, guild_id);
+    static EventWaiter from(@Nonnull LavaClient client, @Nullable Consumer<AudioNode> callback, @Nonnegative long guild_id) {
+        return from(client, null, callback, guild_id);
     }
 }

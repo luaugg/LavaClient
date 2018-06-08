@@ -24,7 +24,6 @@ import samophis.lavalink.client.entities.events.*;
 import samophis.lavalink.client.entities.messages.client.*;
 import samophis.lavalink.client.exceptions.ListenerException;
 import samophis.lavalink.client.util.Asserter;
-import samophis.lavalink.client.util.LavaClientUtil;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
@@ -144,7 +143,7 @@ public class LavaPlayerImpl implements LavaPlayer {
     public void playTrack(@Nonnull AudioTrack track, @Nonnegative long startTime, long endTime) {
         this.track = Asserter.requireNotNull(track);
         Asserter.requireNotNegative(startTime);
-        setNode(LavaClient.getBestNode());
+        setNode(client.getBestNode());
         TrackDataPair cached = client.getIdentifierCache().get(track.getIdentifier(), ignored -> new TrackDataPairImpl(track));
         if (cached == null)
             cached = new TrackDataPairImpl(track);
@@ -155,7 +154,7 @@ public class LavaPlayerImpl implements LavaPlayer {
     public void playTrack(@Nonnull String identifier, @Nonnegative long startTime, long endTime) {
         Asserter.requireNotNegative(startTime);
         TrackDataPair pair = client.getIdentifierCache().getIfPresent(identifier);
-        setNode(LavaClient.getBestNode());
+        setNode(client.getBestNode());
         if (pair == null) {
             client.getHttpManager().resolveTracks(identifier, wrapper -> {
                 List<TrackDataPair> tracks = wrapper.getLoadedTracks();
@@ -274,7 +273,7 @@ public class LavaPlayerImpl implements LavaPlayer {
     private void handleTrackPair(TrackDataPair pair, long start, long end) {
         String data = JsonStream.serialize(new PlayTrack(guild_id, start, end, pair.getTrackData()));
         TrackStartEvent event = new TrackStartEvent(this, pair.getTrack());
-        setNode(LavaClient.getBestNode());
+        setNode(client.getBestNode());
         node.getSocket().sendText(data);
         emitEvent(event);
     }
