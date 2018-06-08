@@ -138,10 +138,10 @@ public class LavaClientImpl extends LavaClient {
     public List<LavaPlayer> getPlayers() {
         return ObjectLists.unmodifiable((ObjectList<LavaPlayer>) players.values());
     }
-    @Nonnull
+    @Nullable
     @Override
     public LavaPlayer getPlayerByGuildId(@Nonnegative long guild_id) {
-        return players.computeIfAbsent(Asserter.requireNotNegative(guild_id), ignored -> new LavaPlayerImpl(this, ignored));
+        return players.get(Asserter.requireNotNegative(guild_id));
     }
     @Nullable
     @Override

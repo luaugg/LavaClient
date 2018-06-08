@@ -20,8 +20,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import samophis.lavalink.client.entities.internal.LavaClientImpl;
-import samophis.lavalink.client.entities.internal.LoadBalancerImpl;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
@@ -79,20 +77,23 @@ public abstract class LavaClient {
 
     /**
      * Fetches an {@link AudioNode AudioNode} by address and port. This operation is extremely fast as it only looks up the entry in a HashMap.
-     * @param address The server address specified in the node's {@link AudioNodeEntry AudioNodeEntry}.
-     * @param websocketPort The server <b>WebSocket</b> port specified in the node's {@link AudioNodeEntry AudioNodeEntry}.
+     * @param address The <b>not-null</b> server address specified in the node's {@link AudioNodeEntry AudioNodeEntry}.
+     * @param websocketPort The <b>positive</b> server <b>WebSocket</b> port specified in the node's {@link AudioNodeEntry AudioNodeEntry}.
      * @return A <b>possibly-null</b> {@link AudioNode AudioNode} associated with the provided server address and WebSocket port.
+     * @throws NullPointerException If the provided address was {@code null}.
+     * @throws IllegalArgumentException If the provided WebSocket Port was negative.
      */
     @Nullable
-    public abstract AudioNode getNodeByIdentifier(String address, int websocketPort);
+    public abstract AudioNode getNodeByIdentifier(@Nonnull String address, @Nonnegative int websocketPort);
 
     /**
-     * Fetches a {@link LavaPlayer LavaPlayer} instance by Guild ID, creating one if it doesn't already exist.
-     * @param guild_id The ID of the Guild.
-     * @return A <b>never-null</b> {@link LavaPlayer LavaPlayer} instance associated with the Guild ID.
+     * Fetches a {@link LavaPlayer LavaPlayer} instance by Guild ID.
+     * <br><p>This method <b>will return {@code null} if a player for the provided Guild ID doesn't exist, unlike previous versions of LavaClient.</b></p>
+     * @param guild_id The <b>positive</b> ID of the Guild.
+     * @return A <b>possibly-null</b> {@link LavaPlayer LavaPlayer} instance associated with the Guild ID.
      */
-    @Nonnull
-    public abstract LavaPlayer getPlayerByGuildId(long guild_id);
+    @Nullable
+    public abstract LavaPlayer getPlayerByGuildId(@Nonnegative long guild_id);
 
     /**
      * Fetches the default password for all {@link AudioNode AudioNodes} the client has access to.
@@ -125,6 +126,7 @@ public abstract class LavaClient {
      */
     @Nonnegative
     public abstract long getCacheExpireAfterAccessMs();
+
     /**
      * Fetches the default WebSocket port for all {@link AudioNode AudioNodes} the client has access to.
      * <br><p>This value equates to {@value WS_PORT_DEFAULT} if it's not specified during the construction of the LavaClient instance.</p>
