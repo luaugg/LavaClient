@@ -19,6 +19,22 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
+// Credit to natanbc for this -- I'm shit at Gradle
+
+task updateDocs(type: Copy) {
+    dependsOn javadoc
+    from "${buildDir}/docs/javadoc"
+    into "docs"
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.8'
+}
+
+shadowJar {
+    classifier = "withDependencies"
+}
+
 artifacts {
     archives sourcesJar
     archives javadocJar
@@ -27,6 +43,7 @@ artifacts {
 repositories {
     jcenter()
 }
+
 
 dependencies {
     compile group: 'com.neovisionaries', name: 'nv-websocket-client', version: '2.5'

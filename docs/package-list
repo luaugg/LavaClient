@@ -1,0 +1,8 @@
+samophis.lavalink.client.entities
+samophis.lavalink.client.entities.builders
+samophis.lavalink.client.entities.events
+samophis.lavalink.client.entities.internal
+samophis.lavalink.client.entities.messages.client
+samophis.lavalink.client.entities.messages.server
+samophis.lavalink.client.exceptions
+samophis.lavalink.client.util
