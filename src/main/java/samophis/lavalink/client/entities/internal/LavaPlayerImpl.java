@@ -45,6 +45,7 @@ public class LavaPlayerImpl implements LavaPlayer {
     private boolean paused;
     private AudioNode node;
     private AudioTrack track;
+    private State state;
     @SuppressWarnings("WeakerAccess")
     public LavaPlayerImpl(@Nonnull LavaClient client, @Nonnegative long guild_id) {
         this.client = Asserter.requireNotNull(client);
@@ -52,6 +53,7 @@ public class LavaPlayerImpl implements LavaPlayer {
         this.listeners = new ObjectArrayList<>();
         this.position = 0;
         this.timestamp = 0;
+        this.state = State.NOT_CONNECTED;
     }
     @Override
     @Nonnull
@@ -109,6 +111,11 @@ public class LavaPlayerImpl implements LavaPlayer {
     @Nonnull
     public AudioTrack getPlayingTrack() {
         return track;
+    }
+    @Nonnull
+    @Override
+    public State getState() {
+        return state;
     }
     @Override
     public void addListener(@Nonnull AudioEventListener listener) {
@@ -268,6 +275,10 @@ public class LavaPlayerImpl implements LavaPlayer {
     @SuppressWarnings("unused")
     public LavaPlayerImpl setChannelId(long channel_id) {
         this.channel_id = channel_id;
+        return this;
+    }
+    public LavaPlayerImpl setState(State state) {
+        this.state = state;
         return this;
     }
     private void handleTrackPair(TrackDataPair pair, long start, long end) {

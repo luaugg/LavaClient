@@ -65,6 +65,13 @@ public interface LavaPlayer {
     List<AudioEventListener> getListeners();
 
     /**
+     * Returns the <b>not-null</b> current {@link State State} of this player.
+     * @return The current {@link State State} of this player.
+     */
+    @Nonnull
+    State getState();
+
+    /**
      * Fetches the ID of the Guild this player is associated with.
      * @return The ID of the Guild this player sends and receives events for.
      */
