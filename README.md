@@ -2,7 +2,8 @@
 [![](https://jitpack.io/v/SamOphis/LavaClient.svg)](https://jitpack.io/#SamOphis/LavaClient)
 [![Build Status](https://travis-ci.org/SamOphis/LavaClient.svg?branch=master)](https://travis-ci.org/SamOphis/LavaClient)
 
-[Please check out the Wiki as well, it goes into much more accurate and informative detail!](https://github.com/SamOphis/LavaClient/wiki)
+[Please check out the Wiki as well, it goes into much more accurate and informative detail!](https://github.com/SamOphis/LavaClient/wiki)  
+Documentation is available for [all official releases](https://github.com/SamOphis/LavaClient/releases), and the documentation for the latest stable version [can be found here.](https://samophis.github.io/LavaClient)
 
 LavaClient is a fast client implementation for [Lavalink v2 and v3](https://github.com/Frederikam/Lavalink) written in Java 8, built from the ground up for speed, abstraction and ease-of-use. Although it can be used normally as is, since it lacks specific references to Java Discord API Libraries, certain things (such as channel objects, etc.) are not represented except for their numeric ID's.
 
