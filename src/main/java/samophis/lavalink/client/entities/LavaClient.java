@@ -216,6 +216,29 @@ public abstract class LavaClient {
     public abstract Long2ObjectMap<LavaPlayer> getPlayerMap();
 
     /**
+     * Fetches a <b>not-null</b> {@link LavaPlayer LavaPlayer} instance associated with a <b>positive</b> Guild ID.
+     * <br><p>If a player is already found, it'll simply be returned. If one doesn't exist, it'll be created <b>but NOT connected.</b>
+     * <br>In this sense, a new player doesn't submit a Voice Update to an {@link AudioNode AudioNode} manually. Use an {@link EventWaiter EventWaiter}
+     * wherever you can instead of manually creating new players.</p>
+     * @param node The <b>possibly-null</b> {@link AudioNode AudioNode} to set. Replaced with the best available node if this is {@code null}.
+     * @param guild_id The <b>positive</b> ID of the Guild to connect to.
+     * @return A <b>not-null</b> {@link LavaPlayer LavaPlayer} instance.
+     */
+    @Nonnull
+    public abstract LavaPlayer newPlayer(@Nullable AudioNode node, @Nonnegative long guild_id);
+
+    /**
+     * Fetches a <b>not-null</b> {@link LavaPlayer LavaPlayer} instance associated with a <b>positive</b> Guild ID.
+     * <br><p>If a player is already found, it'll simply be returned. If one doesn't exist, it'll be created <b>but NOT connected.</b>
+     * <br>In this sense, a new player doesn't submit a Voice Update to an {@link AudioNode AudioNode} manually. Use an {@link EventWaiter EventWaiter}
+     * wherever you can instead of manually creating new players.</p>
+     * @param guild_id The <b>positive</b> ID of the Guild to connect to.
+     * @return A <b>not-null</b> {@link LavaPlayer LavaPlayer} instance.
+     */
+    @Nonnull
+    public abstract LavaPlayer newPlayer(@Nonnegative long guild_id);
+
+    /**
      * Shuts down LavaClient (also resetting the state).
      * <br><p>This method removes and disconnects from all {@link AudioNode AudioNodes} and additionally shuts down the attached {@link LavaHttpManager LavaHttpManager}.</p>
      * @throws IllegalStateException If this client has already been shutdown.

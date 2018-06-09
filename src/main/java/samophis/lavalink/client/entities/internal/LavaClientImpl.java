@@ -143,6 +143,20 @@ public class LavaClientImpl extends LavaClient {
     public LavaPlayer getPlayerByGuildId(@Nonnegative long guild_id) {
         return players.get(Asserter.requireNotNegative(guild_id));
     }
+    @Nonnull
+    @Override
+    public LavaPlayer newPlayer(@Nullable AudioNode node, long guild_id) {
+        return players.computeIfAbsent(Asserter.requireNotNegative(guild_id), id -> {
+            LavaPlayer player = new LavaPlayerImpl(this, id);
+            player.setNode(node == null ? getBestNode() : node);
+            return player;
+        });
+    }
+    @Nonnull
+    @Override
+    public LavaPlayer newPlayer(long guild_id) {
+        return newPlayer(null, guild_id);
+    }
     @Nullable
     @Override
     public AudioNode getNodeByIdentifier(@Nonnull String address, @Nonnegative int websocketPort) {
