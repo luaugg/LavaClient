@@ -89,6 +89,7 @@ public interface EventWaiter {
 
     /**
      * Sets the Session ID and tries to connect if both the Voice Token and Endpoint have also been set.
+     * <br><p>Connecting will create or fetch a pre-existing {@link LavaPlayer LavaPlayer} instance which is then cached.</p>
      * @param session_id The <b>not-null</b> Session ID to set.
      * @throws NullPointerException If {@code 'session_id'} is {@code null}.
      */
@@ -96,6 +97,7 @@ public interface EventWaiter {
 
     /**
      * Sets the Voice Token and Endpoint, attempting to connect if the Session ID has also been set.
+     * <br><p>Connecting will create or fetch a pre-existing {@link LavaPlayer LavaPlayer} instance which is then cached.</p>
      * @param token The <b>not-null</b> Voice Token to set.
      * @param endpoint The <b>not-null</b> Voice Server Endpoint to set.
      * @throws NullPointerException If either {@code 'token'} or {@code 'endpoint'} are {@code null}.
@@ -105,6 +107,7 @@ public interface EventWaiter {
     /**
      * Attempts to connect to the provided {@link AudioNode AudioNode} regardless of current state.
      * <br><p>The user should have absolutely no need to call this method at all. It's pretty dangerous.</p>
+     * @throws IllegalStateException If the created {@link LavaPlayer LavaPlayer} instance is {@code null} or in the incorrect {@link State State}.
      */
     void tryConnect();
 

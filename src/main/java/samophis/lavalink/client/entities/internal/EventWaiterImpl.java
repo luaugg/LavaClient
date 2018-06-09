@@ -17,9 +17,9 @@
 package samophis.lavalink.client.entities.internal;
 
 import com.jsoniter.output.JsonStream;
-import samophis.lavalink.client.entities.AudioNode;
-import samophis.lavalink.client.entities.EventWaiter;
-import samophis.lavalink.client.entities.LavaClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import samophis.lavalink.client.entities.*;
 import samophis.lavalink.client.entities.messages.client.VoiceUpdate;
 import samophis.lavalink.client.util.Asserter;
 
@@ -29,11 +29,13 @@ import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 public class EventWaiterImpl implements EventWaiter {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventWaiterImpl.class);
     private final LavaClient client;
     private final AudioNode node;
     private final Consumer<AudioNode> callback;
     private final long guild_id;
     private String session_id, token, endpoint;
+    private LavaPlayer player;
     public EventWaiterImpl(@Nonnull LavaClient client, @Nonnull AudioNode node, @Nullable Consumer<AudioNode> callback, @Nonnegative long guild_id) {
         this.client = Asserter.requireNotNull(client);
         this.node = Asserter.requireNotNull(node);
@@ -78,19 +80,32 @@ public class EventWaiterImpl implements EventWaiter {
     @Override
     public void setSessionIdAndTryConnect(@Nonnull String session_id) {
         this.session_id = Asserter.requireNotNull(session_id);
-        if (token != null && endpoint != null)
+        if (token != null && endpoint != null) {
+            this.player = client.newPlayer(node, guild_id);
             tryConnect();
+        }
     }
     @Override
     public void setServerAndTryConnect(@Nonnull String token, @Nonnull String endpoint) {
         this.token = Asserter.requireNotNull(token);
         this.endpoint = Asserter.requireNotNull(endpoint);
-        if (session_id != null)
+        if (session_id != null) {
+            this.player = client.newPlayer(node, guild_id);
             tryConnect();
+        }
     }
     @Override
     public void tryConnect() {
+        if (player == null) {
+            LOGGER.warn("LavaPlayer instance == null (incorrect state)!");
+            throw new IllegalStateException("LavaPlayer instance hasn't been created yet (incorrect state!)");
+        }
+        if (player.getState() == State.CONNECTED) {
+            LOGGER.warn("LavaPlayer instance is already connected!");
+            throw new IllegalStateException("LavaPlayer instance is already connected!");
+        }
         node.getSocket().sendText(JsonStream.serialize(new VoiceUpdate(guild_id, session_id, token, endpoint)));
+        ((LavaPlayerImpl) player).setState(State.CONNECTED);
         if (callback != null)
             callback.accept(node);
     }
