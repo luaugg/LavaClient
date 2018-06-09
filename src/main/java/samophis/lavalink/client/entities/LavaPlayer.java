@@ -247,7 +247,9 @@ public interface LavaPlayer {
 
     /**
      * Sends a Voice Update to the currently set/connected {@link AudioNode AudioNode}, setting the state to {@link State#CONNECTED CONNECTED}.
+     * <br><p>This method shouldn't be called unless you know what you're doing. <b>Use an {@link EventWaiter EventWaiter} wherever possible.</b></p>
      * @throws IllegalStateException If this player is already connected to a node.
+     * @throws NullPointerException If any of the provided parameters were {@code null}.
      */
-    void connect();
+    void connect(@Nonnull String session_id, @Nonnull String token, @Nonnull String endpoint);
 }

@@ -301,14 +301,16 @@ public class LavaPlayerImpl implements LavaPlayer {
     }
 
     @Override
-    public void connect() {
+    public void connect(@Nonnull String session_id, @Nonnull String token, @Nonnull String endpoint) {
         if (this.state == State.CONNECTED) {
             LOGGER.warn("Player (with Guild ID: {}) is already connected!", guild_id);
             throw new IllegalStateException("State == CONNECTED");
         }
+        VoiceUpdate update = new VoiceUpdate(guild_id, Asserter.requireNotNull(session_id), Asserter.requireNotNull(token), Asserter.requireNotNull(endpoint));
+        node.getSocket().sendText(JsonStream.serialize(update));
+        this.state = State.CONNECTED;
     }
 
-    // Internal methods are not checked because they're typically only used internally.
     public LavaPlayerImpl setPosition(long position) {
         this.position = position;
         return this;
