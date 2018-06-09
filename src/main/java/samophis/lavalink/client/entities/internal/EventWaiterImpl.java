@@ -16,11 +16,9 @@
 
 package samophis.lavalink.client.entities.internal;
 
-import com.jsoniter.output.JsonStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import samophis.lavalink.client.entities.*;
-import samophis.lavalink.client.entities.messages.client.VoiceUpdate;
 import samophis.lavalink.client.util.Asserter;
 
 import javax.annotation.Nonnegative;
@@ -100,12 +98,7 @@ public class EventWaiterImpl implements EventWaiter {
             LOGGER.warn("LavaPlayer instance == null (incorrect state)!");
             throw new IllegalStateException("LavaPlayer instance hasn't been created yet (incorrect state!)");
         }
-        if (player.getState() == State.CONNECTED) {
-            LOGGER.warn("LavaPlayer instance is already connected!");
-            throw new IllegalStateException("LavaPlayer instance is already connected!");
-        }
-        node.getSocket().sendText(JsonStream.serialize(new VoiceUpdate(guild_id, session_id, token, endpoint)));
-        ((LavaPlayerImpl) player).setState(State.CONNECTED);
+        player.connect(session_id, token, endpoint);
         if (callback != null)
             callback.accept(node);
     }
