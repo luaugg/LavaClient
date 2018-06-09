@@ -19,12 +19,13 @@ package samophis.lavalink.client.entities.internal;
 import com.jsoniter.output.JsonStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import samophis.lavalink.client.entities.*;
 import samophis.lavalink.client.entities.events.*;
 import samophis.lavalink.client.entities.messages.client.*;
 import samophis.lavalink.client.exceptions.ListenerException;
 import samophis.lavalink.client.util.Asserter;
-import samophis.lavalink.client.util.LavaClientUtil;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
@@ -38,6 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class LavaPlayerImpl implements LavaPlayer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LavaPlayerImpl.class);
     private final LavaClient client;
     private final List<AudioEventListener> listeners;
     private final long guild_id;
@@ -46,6 +48,7 @@ public class LavaPlayerImpl implements LavaPlayer {
     private boolean paused;
     private AudioNode node;
     private AudioTrack track;
+    private State state;
     @SuppressWarnings("WeakerAccess")
     public LavaPlayerImpl(@Nonnull LavaClient client, @Nonnegative long guild_id) {
         this.client = Asserter.requireNotNull(client);
@@ -53,6 +56,7 @@ public class LavaPlayerImpl implements LavaPlayer {
         this.listeners = new ObjectArrayList<>();
         this.position = 0;
         this.timestamp = 0;
+        this.state = State.NOT_CONNECTED;
     }
     @Override
     @Nonnull
@@ -111,12 +115,21 @@ public class LavaPlayerImpl implements LavaPlayer {
     public AudioTrack getPlayingTrack() {
         return track;
     }
+    @Nonnull
+    @Override
+    public State getState() {
+        return state;
+    }
     @Override
     public void addListener(@Nonnull AudioEventListener listener) {
         listeners.add(Asserter.requireNotNull(listener));
     }
     @Override
     public void setPaused(boolean paused) {
+        if (this.state != State.CONNECTED) {
+            LOGGER.warn("Attempted to set paused to {} for Guild ID: {} while in the {} state!", paused, guild_id, state.name());
+            throw new IllegalStateException("State != CONNECTED");
+        }
         if (this.paused == paused)
             return;
         this.paused = paused;
@@ -126,6 +139,10 @@ public class LavaPlayerImpl implements LavaPlayer {
     }
     @Override
     public void setVolume(@Nonnegative int volume) {
+        if (this.state != State.CONNECTED) {
+            LOGGER.warn("Attempted to set volume to {} for Guild ID: {} while in the {} state!", volume, guild_id, state.name());
+            throw new IllegalStateException("State != CONNECTED");
+        }
         if (Asserter.requireNotNegative(volume) > 150)
             return;
         node.getSocket().sendText(JsonStream.serialize(new SetVolume(guild_id, volume)));
@@ -142,9 +159,13 @@ public class LavaPlayerImpl implements LavaPlayer {
     @Override
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void playTrack(@Nonnull AudioTrack track, @Nonnegative long startTime, long endTime) {
+        if (this.state != State.CONNECTED) {
+            LOGGER.warn("Attempt to play track for Guild ID: {} while in the {} state!", guild_id, state.name());
+            throw new IllegalStateException("State != CONNECTED");
+        }
         this.track = Asserter.requireNotNull(track);
         Asserter.requireNotNegative(startTime);
-        setNode(LavaClient.getBestNode());
+        setNode(client.getBestNode());
         TrackDataPair cached = client.getIdentifierCache().get(track.getIdentifier(), ignored -> new TrackDataPairImpl(track));
         if (cached == null)
             cached = new TrackDataPairImpl(track);
@@ -153,9 +174,13 @@ public class LavaPlayerImpl implements LavaPlayer {
     @Override
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void playTrack(@Nonnull String identifier, @Nonnegative long startTime, long endTime) {
+        if (this.state != State.CONNECTED) {
+            LOGGER.warn("Attempt to play track for Guild ID: {} while in the {} state!", guild_id, state.name());
+            throw new IllegalStateException("State != CONNECTED");
+        }
         Asserter.requireNotNegative(startTime);
         TrackDataPair pair = client.getIdentifierCache().getIfPresent(identifier);
-        setNode(LavaClient.getBestNode());
+        setNode(client.getBestNode());
         if (pair == null) {
             client.getHttpManager().resolveTracks(identifier, wrapper -> {
                 List<TrackDataPair> tracks = wrapper.getLoadedTracks();
@@ -175,6 +200,10 @@ public class LavaPlayerImpl implements LavaPlayer {
     @Nonnull
     @Override
     public AudioWrapper loadTracks(@Nonnull String identifier) {
+        if (this.state != State.CONNECTED) {
+            LOGGER.warn("Attempt to load tracks for Guild ID: {} while in the {} state!", guild_id, state.name());
+            throw new IllegalStateException("State != CONNECTED");
+        }
         TrackDataPair pair = client.getIdentifierCache().getIfPresent(identifier);
         if (pair != null) {
             List<TrackDataPair> pairs = new ObjectArrayList<>(1);
@@ -201,6 +230,10 @@ public class LavaPlayerImpl implements LavaPlayer {
     }
     @Override
     public void loadTracksAsync(@Nonnull String identifier, @Nonnull Consumer<AudioWrapper> callback) {
+        if (this.state != State.CONNECTED) {
+            LOGGER.warn("Attempt to load tracks asynchronously for Guild ID: {} while in the {} state!", guild_id, state.name());
+            throw new IllegalStateException("State != CONNECTED");
+        }
         Asserter.requireNotNull(callback);
         TrackDataPair pair = client.getIdentifierCache().getIfPresent(identifier);
         if (pair != null) {
@@ -213,14 +246,27 @@ public class LavaPlayerImpl implements LavaPlayer {
     }
     @Override
     public void stopTrack() {
+        if (this.state != State.CONNECTED) {
+            LOGGER.warn("Attempt to stop track for Guild ID: {} while in the {} state!", guild_id, state.name());
+            throw new IllegalStateException("State != CONNECTED");
+        }
         node.getSocket().sendText(JsonStream.serialize(new StopPlayback(guild_id)));
     }
     @Override
     public void destroyPlayer() {
+        if (this.state != State.CONNECTED) {
+            LOGGER.warn("Attempt to destroy player for Guild ID: {} while in the {} state!", guild_id, state.name());
+            throw new IllegalStateException("State != CONNECTED");
+        }
+        state = State.DESTROYED;
         node.getSocket().sendText(JsonStream.serialize(new DestroyPlayer(guild_id)));
     }
     @Override
     public void seek(@Nonnegative long position) {
+        if (this.state != State.CONNECTED) {
+            LOGGER.warn("Attempt to seek track for Guild ID: {} while in the {} state!", guild_id, state.name());
+            throw new IllegalStateException("State != CONNECTED");
+        }
         if (Asserter.requireNotNegative(position) > Asserter.requireNotNull(track).getDuration())
             return;
         node.getSocket().sendText(JsonStream.serialize(new SeekTrack(guild_id, position)));
@@ -246,13 +292,25 @@ public class LavaPlayerImpl implements LavaPlayer {
                 return;
             }
         }
+        LOGGER.warn("Event does not have a listener method! Event Name: {}", ev_cls.getSimpleName());
         throw new IllegalArgumentException("Parameter event does not have a listener method in the AudioEventListener interface!");
     }
     @Override
     public void setNode(@Nonnull AudioNode node) {
         this.node = Asserter.requireNotNull(node);
     }
-    // Internal methods are not checked because they're typically only used internally.
+
+    @Override
+    public void connect(@Nonnull String session_id, @Nonnull String token, @Nonnull String endpoint) {
+        if (this.state == State.CONNECTED) {
+            LOGGER.warn("Player (with Guild ID: {}) is already connected!", guild_id);
+            throw new IllegalStateException("State == CONNECTED");
+        }
+        VoiceUpdate update = new VoiceUpdate(guild_id, Asserter.requireNotNull(session_id), Asserter.requireNotNull(token), Asserter.requireNotNull(endpoint));
+        node.getSocket().sendText(JsonStream.serialize(update));
+        this.state = State.CONNECTED;
+    }
+
     public LavaPlayerImpl setPosition(long position) {
         this.position = position;
         return this;
@@ -271,10 +329,15 @@ public class LavaPlayerImpl implements LavaPlayer {
         this.channel_id = channel_id;
         return this;
     }
+    @SuppressWarnings("all")
+    public LavaPlayerImpl setState(State state) {
+        this.state = state;
+        return this;
+    }
     private void handleTrackPair(TrackDataPair pair, long start, long end) {
         String data = JsonStream.serialize(new PlayTrack(guild_id, start, end, pair.getTrackData()));
         TrackStartEvent event = new TrackStartEvent(this, pair.getTrack());
-        setNode(LavaClient.getBestNode());
+        setNode(client.getBestNode());
         node.getSocket().sendText(data);
         emitEvent(event);
     }

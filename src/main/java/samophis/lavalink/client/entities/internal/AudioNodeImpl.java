@@ -98,7 +98,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
             LOGGER.info("Connected after {} Reconnect Attempt(s)!", reconnectAttempts.get());
         List<String> found = headers.get("Lavalink-Major-Version");
         this.usingVersionThree = (found != null && found.get(0).equals("3"));
-        client.getPlayers().forEach(player -> player.setNode(LavaClient.getBestNode()));
+        client.getPlayers().forEach(player -> player.setNode(client.getBestNode()));
         reconnectInterval.set(1000);
         reconnectAttempts.set(0);
     }
@@ -106,7 +106,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
     public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
         client.getPlayers().forEach(player -> {
             if (equals(player.getConnectedNode()))
-                player.setNode(LavaClient.getBestNode());
+                player.setNode(client.getBestNode());
         });
         String reason = closedByServer ? serverCloseFrame.getCloseReason() : clientCloseFrame.getCloseReason();
         int code = closedByServer ? serverCloseFrame.getCloseCode() : clientCloseFrame.getCloseCode();
@@ -209,9 +209,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         return socket;
     }
     @Override
-    @SuppressWarnings("deprecation")
-    // fallback on client-set v3 if usingVersionThree is false (in the rare case that someone is running an older version of v3)
     public boolean isUsingLavalinkVersionThree() {
-        return usingVersionThree || entry.isUsingLavalinkVersionThree();
+        return usingVersionThree;
     }
 }

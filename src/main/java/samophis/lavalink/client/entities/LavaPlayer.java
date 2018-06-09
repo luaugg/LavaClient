@@ -65,6 +65,13 @@ public interface LavaPlayer {
     List<AudioEventListener> getListeners();
 
     /**
+     * Returns the <b>not-null</b> current {@link State State} of this player.
+     * @return The current {@link State State} of this player.
+     */
+    @Nonnull
+    State getState();
+
+    /**
      * Fetches the ID of the Guild this player is associated with.
      * @return The ID of the Guild this player sends and receives events for.
      */
@@ -120,7 +127,8 @@ public interface LavaPlayer {
      * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via a track. Both work perfectly and all methods do cache, removing some latency/load.
      * <br>Additionally, all the {@code playTrack} methods will only play one track. Even if a search is done or a playlist is loaded, only one song is played due to
      * the nature of music bots not being locked and uniform.</p>
-     * @throws NullPointerException If the provided AudioTrack is null.
+     * @throws NullPointerException If the provided AudioTrack was {@code null}.
+     * @throws IllegalStateException If the player isn't currently connected to a {@link AudioNode AudioNode}.
      * @param track The <b>non-null</b> track to play.
      */
     void playTrack(@Nonnull AudioTrack track);
@@ -129,8 +137,9 @@ public interface LavaPlayer {
      * Plays a track using the best, available {@link AudioNode AudioNode}.
      * <br><p>Note: Playing an AudioTrack directly saves a little bit of latency but also puts more load on the client and forces you to implement Lavaplayer on a wider scale.
      * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via track. Both work perfectly and all methods do cache, removing some latency/load.</p>
-     * @throws NullPointerException If the provided AudioTrack is null.
+     * @throws NullPointerException If the provided AudioTrack was {@code null}.
      * @throws IllegalArgumentException If the ending time is smaller than the starting time.
+     * @throws IllegalStateException If the player isn't currently connected to a {@link AudioNode AudioNode}.
      * @param track The <b>non-null</b> AudioTrack to play.
      * @param startTime The starting time of the track, useful for playing only sections of a track. Leave as 0 <b>(not negative one)</b> to start from the beginning of the track.
      * @param endTime The ending time of the track, useful for playing only sections of a track. Leave as -1 <b>(not zero)</b> to play what's left of the track from the start time.
@@ -141,7 +150,8 @@ public interface LavaPlayer {
      * Plays a track using the best, available {@link AudioNode AudioNode}.
      * <br><p>Note: Playing a track via an identifier adds a little bit of latency but also puts less load on the client and removes the need to implement Lavaplayer more widely.
      * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via a track. Both work perfectly and all methods do cache, removing some latency/load.</p>
-     * @throws NullPointerException If the provided identifier is null.
+     * @throws NullPointerException If the provided identifier was {@code null}.
+     * @throws IllegalStateException If the player isn't currently connected to a {@link AudioNode AudioNode}.
      * @param identifier The <b>non-null</b> identifier from which to load an AudioTrack.
      */
 
@@ -152,8 +162,9 @@ public interface LavaPlayer {
      * <br>It's your choice whether or not you wish to load songs remotely via an identifier or via a track. Both work perfectly and all methods do cache, removing some latency/load.
      * <br>Additionally, all the {@code playTrack} methods will only play one track. Even if a search is done or a playlist is loaded, only one song is played due to
      * the nature of music bots not being locked and uniform.</p>
-     * @throws NullPointerException If the provided identifier is null.
+     * @throws NullPointerException If the provided identifier was {@code null}.
      * @throws IllegalArgumentException If the ending time is smaller than the starting time.
+     * @throws IllegalStateException If the player isn't currently connected to a {@link AudioNode AudioNode}.
      * @param identifier The <b>non-null</b> identifier from which to load an AudioTrack.
      * @param startTime The starting time of the track, useful for playing only sections of a track. Leave as 0 <b>(not negative one)</b> to start from the beginning of the track.
      * @param endTime The ending time of the track, useful for playing only sections of a track. Leave as -1 <b>(not zero)</b> to play what's left of the track from the start time.
@@ -165,6 +176,7 @@ public interface LavaPlayer {
      * <br><p>Returns an {@link AudioWrapper AudioWrapper} object which wraps search results, playlists or normal tracks into one object.</p>
      * @param identifier The <b>not-null</b> identifier used to actually load the tracks.
      * @throws NullPointerException If the provided identifier was {@code null}.
+     * @throws IllegalStateException If the player isn't currently connected to a {@link AudioNode AudioNode}.
      * @return An {@link AudioWrapper AudioWrapper} object which contains the loaded tracks.
      */
     @Nonnull
@@ -177,11 +189,14 @@ public interface LavaPlayer {
      * allowing you to avoid callbacks at the sake of performance!</p>
      * @param identifier The <b>not-null</b> identifier used to actually load the tracks.
      * @param callback The <b>not-null</b> callback used to actually do something with the loaded tracks.
+     * @throws NullPointerException If the provided identifier or callback were {@code null}.
+     * @throws IllegalStateException If the player isn't currently connected to a {@link AudioNode AudioNode}.
      */
     void loadTracksAsync(@Nonnull String identifier, @Nonnull Consumer<AudioWrapper> callback);
 
     /**
-     * Requests the Lavalink Server to stop playback.
+     * Requests the Lavalink Server to stop playback
+     * @throws IllegalStateException If the player isn't currently connected to a {@link AudioNode AudioNode}.
      */
     void stopTrack();
 
@@ -189,18 +204,21 @@ public interface LavaPlayer {
      * Sets whether or not to pause playback.
      * <br><p>Fires a PlayerPauseEvent or a PlayerResumeEvent.</p>
      * @param isPaused If the player should pause.
+     * @throws IllegalStateException If the player isn't currently connected to a {@link AudioNode AudioNode}.
      */
     void setPaused(boolean isPaused);
 
     /**
      * Requests the Lavalink-Server to destroy the player.
      * <br><p><b>Note: It's VERY important to realize that the LavaPlayer object will maintain its state, allowing for future reconnects at the same position.</b></p>
+     * @throws IllegalStateException If the player isn't currently connected to a {@link AudioNode AudioNode}.
      */
     void destroyPlayer();
 
     /**
      * Skips to a certain position in a track.
      * @param position The position, in milliseconds, to skip to.
+     * @throws IllegalStateException If the player isn't currently connected to a {@link AudioNode AudioNode}.
      */
     void seek(@Nonnegative long position);
 
@@ -208,12 +226,13 @@ public interface LavaPlayer {
      * Sets the volume of playback.
      * <br><p>Note: If the provided volume is negative or over 150, this method will return early instead of sending a volume update.</p>
      * @param volume The volume to set playback to, automatically bounded from 0 to 150 inclusive.
+     * @throws IllegalStateException If the player isn't currently connected to a {@link AudioNode AudioNode}.
      */
     void setVolume(@Nonnegative int volume);
 
     /**
      * Sets the node to connect and send data to.
-     * @throws NullPointerException If the {@link AudioNode node} provided is null.
+     * @throws NullPointerException If the {@link AudioNode node} provided is {@code null}.
      * @param node the <b>non-null</b> {@link AudioNode AudioNode} to connect and send data to.
      */
     void setNode(@Nonnull AudioNode node);
@@ -221,8 +240,19 @@ public interface LavaPlayer {
     /**
      * Emits an {@link PlayerEvent event} to all {@link AudioEventListener listeners} attached to the player.
      * <br><p>Note: This uses reflection to determine the method to fire and thus shouldn't be used quickly/abusively.</p>
-     * @throws NullPointerException If the event provided is null.
+     * @throws NullPointerException If the event provided is {@code null}.
      * @param event The <b>non-null</b> event to fire.
      */
     void emitEvent(@Nonnull PlayerEvent event);
+
+    /**
+     * Sends a Voice Update to the currently set/connected {@link AudioNode AudioNode}, setting the state to {@link State#CONNECTED CONNECTED}.
+     * <br><p>This method shouldn't be called unless you know what you're doing. <b>Use an {@link EventWaiter EventWaiter} wherever possible.</b></p>
+     * @param session_id The <b>not-null</b> Session ID from the Discord VOICE_STATE_UPDATE Event.
+     * @param token The <b>not-null</b> Voice Token from the Discord VOICE_SERVER_UPDATE Event.
+     * @param endpoint The <b>not-null</b> Endpoint from the Discord VOICE_SERVER_UPDATE Event.
+     * @throws IllegalStateException If this player is already connected to a node.
+     * @throws NullPointerException If any of the provided parameters were {@code null}.
+     */
+    void connect(@Nonnull String session_id, @Nonnull String token, @Nonnull String endpoint);
 }

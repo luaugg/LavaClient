@@ -32,9 +32,8 @@ public class AudioNodeEntryImpl implements AudioNodeEntry {
     public final LavaClient client;
     private final String address, password, httpAddress, wsAddress;
     private final int rest, ws;
-    private final boolean isUsingVersionThree;
     private final SocketInitializer initializer;
-    public AudioNodeEntryImpl(LavaClient client, String address, String password, int rest, int ws, boolean isUsingVersionThree, SocketInitializer initializer) {
+    public AudioNodeEntryImpl(LavaClient client, String address, String password, int rest, int ws, SocketInitializer initializer) {
         this.client = Asserter.requireNotNull(client);
         this.address = Asserter.requireNotNull(address);
         this.httpAddress = !HTTP_PATTERN.matcher(address).find() ? "http://" + address : address;
@@ -42,7 +41,6 @@ public class AudioNodeEntryImpl implements AudioNodeEntry {
         this.password = password == null ? client.getGlobalServerPassword() : password;
         this.rest = rest == 0 ? client.getGlobalRestPort() : rest;
         this.ws = ws == 0 ? client.getGlobalWebSocketPort() : ws;
-        this.isUsingVersionThree = isUsingVersionThree;
         this.initializer = initializer;
     }
     @Override
@@ -79,10 +77,6 @@ public class AudioNodeEntryImpl implements AudioNodeEntry {
     @Nonnegative
     public int getWebSocketPort() {
         return ws;
-    }
-    @Override
-    public boolean isUsingLavalinkVersionThree() {
-        return isUsingVersionThree;
     }
     @Nullable
     @Override

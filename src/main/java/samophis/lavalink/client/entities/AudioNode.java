@@ -77,8 +77,7 @@ public interface AudioNode {
     boolean isAvailable();
 
     /**
-     * Returns whether or not this node is running Lavalink v3 based on response headers from the initial connection + possible fallback on entry.
-     * <br><p>This method will fallback on the deprecated {@link AudioNodeEntry#isUsingLavalinkVersionThree()}} method if it doesn't automatically detect v3.</p>
+     * Returns whether or not this node is running Lavalink v3 based on response headers from the initial connection.
      * @return Whether or not this node is running Lavalink v3.
      */
     boolean isUsingLavalinkVersionThree();
