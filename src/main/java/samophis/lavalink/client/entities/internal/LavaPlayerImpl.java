@@ -327,6 +327,7 @@ public class LavaPlayerImpl implements LavaPlayer {
         this.channel_id = channel_id;
         return this;
     }
+    @SuppressWarnings("all")
     public LavaPlayerImpl setState(State state) {
         this.state = state;
         return this;
