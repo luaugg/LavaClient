@@ -248,6 +248,9 @@ public interface LavaPlayer {
     /**
      * Sends a Voice Update to the currently set/connected {@link AudioNode AudioNode}, setting the state to {@link State#CONNECTED CONNECTED}.
      * <br><p>This method shouldn't be called unless you know what you're doing. <b>Use an {@link EventWaiter EventWaiter} wherever possible.</b></p>
+     * @param session_id The <b>not-null</b> Session ID from the Discord VOICE_STATE_UPDATE Event.
+     * @param token The <b>not-null</b> Voice Token from the Discord VOICE_SERVER_UPDATE Event.
+     * @param endpoint The <b>not-null</b> Endpoint from the Discord VOICE_SERVER_UPDATE Event.
      * @throws IllegalStateException If this player is already connected to a node.
      * @throws NullPointerException If any of the provided parameters were {@code null}.
      */
