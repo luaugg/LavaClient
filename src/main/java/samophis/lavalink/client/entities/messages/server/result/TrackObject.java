@@ -16,8 +16,10 @@
 
 package samophis.lavalink.client.entities.messages.server.result;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class TrackObject {
     public String track;
-    public TrackInfo info;
+    @JsonProperty public TrackInfo info;
 }
