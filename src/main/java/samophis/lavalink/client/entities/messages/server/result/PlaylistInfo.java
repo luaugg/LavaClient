@@ -14,13 +14,15 @@
    limitations under the License.
  */
 
-package samophis.lavalink.client.entities.messages.server;
-import samophis.lavalink.client.entities.messages.server.result.PlaylistInfo;
-import samophis.lavalink.client.entities.messages.server.result.TrackObject;
+package samophis.lavalink.client.entities.messages.server.result;
+
+import com.jsoniter.annotation.JsonMissingProperties;
+
+import java.util.List;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
-public class TrackLoadResult {
-    public PlaylistInfo playlistInfo;
-    public TrackObject[] tracks;
-    public boolean isPlaylist;
+public class PlaylistInfo {
+    public String name;
+    public Integer selectedTrack;
+    @JsonMissingProperties public List<String> missingFields;
 }

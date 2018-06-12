@@ -14,13 +14,10 @@
    limitations under the License.
  */
 
-package samophis.lavalink.client.entities.messages.server;
-import samophis.lavalink.client.entities.messages.server.result.PlaylistInfo;
-import samophis.lavalink.client.entities.messages.server.result.TrackObject;
+package samophis.lavalink.client.entities.messages.server.result;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
-public class TrackLoadResult {
-    public PlaylistInfo playlistInfo;
-    public TrackObject[] tracks;
-    public boolean isPlaylist;
+public class TrackObject {
+    public String track;
+    public TrackInfo info;
 }

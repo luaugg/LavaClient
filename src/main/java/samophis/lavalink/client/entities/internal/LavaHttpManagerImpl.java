@@ -16,6 +16,7 @@
 
 package samophis.lavalink.client.entities.internal;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jsoniter.JsonIterator;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.apache.http.HttpEntity;
@@ -30,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import samophis.lavalink.client.entities.*;
 import samophis.lavalink.client.entities.messages.server.TrackLoadResult;
+import samophis.lavalink.client.entities.messages.server.result.TrackObject;
 import samophis.lavalink.client.exceptions.HttpRequestException;
 import samophis.lavalink.client.util.Asserter;
 
@@ -40,10 +42,9 @@ import java.net.URLEncoder;
 import java.util.List;
 import java.util.function.Consumer;
 
-import samophis.lavalink.client.entities.messages.server.TrackLoadResult.TrackLoadResultObject;
-
 public class LavaHttpManagerImpl implements LavaHttpManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(LavaHttpManagerImpl.class);
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private final CloseableHttpAsyncClient http;
     private final LavaClient client;
     private boolean isShutdown;
@@ -96,20 +97,26 @@ public class LavaHttpManagerImpl implements LavaHttpManager {
                     throw new HttpRequestException("Lavalink Server returned no data!");
                 AudioWrapper wrapper;
                 if (node.isUsingLavalinkVersionThree()) {
-                    TrackLoadResult res = JsonIterator.deserialize(content, TrackLoadResult.class);
+                    TrackLoadResult res;
+                    try {
+                        res = MAPPER.readValue(content, TrackLoadResult.class);
+                    } catch (IOException exc) {
+                        LOGGER.error("Error when parsing /loadtracks response!", exc);
+                        return;
+                    }
                     List<TrackDataPair> pairs = new ObjectArrayList<>(res.tracks.length);
-                    for (TrackLoadResultObject obj : res.tracks)
+                    for (TrackObject obj : res.tracks)
                         pairs.add(new TrackDataPairImpl(obj.track));
-                    Integer selected = res.selectedTrack;
+                    Integer selected = res.playlistInfo.selectedTrack;
                     TrackDataPair selectedPair = null;
                     if (selected != null && selected < pairs.size())
                         selectedPair = pairs.get(selected);
-                    wrapper = new AudioWrapperImpl(res.playlistName, selectedPair, pairs, res.isPlaylist);
+                    wrapper = new AudioWrapperImpl(res.playlistInfo.name, selectedPair, pairs, res.isPlaylist);
                 }
                 else {
-                    TrackLoadResultObject[] objects = JsonIterator.deserialize(content, TrackLoadResultObject[].class);
+                    TrackObject[] objects = JsonIterator.deserialize(content, TrackObject[].class);
                     List<TrackDataPair> pairs = new ObjectArrayList<>(objects.length);
-                    for (TrackLoadResultObject obj : objects)
+                    for (TrackObject obj : objects)
                         pairs.add(new TrackDataPairImpl(obj.track));
                     wrapper = new AudioWrapperImpl(null, null, pairs, false);
                 }
