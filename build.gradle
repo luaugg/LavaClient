@@ -7,7 +7,7 @@ plugins {
 
 group 'samophis'
 description 'Fast client implementation for Lavalink.'
-version '2.0.1'
+version '2.0.2'
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
@@ -62,6 +62,8 @@ repositories {
 
 dependencies {
     compile group: 'com.neovisionaries', name: 'nv-websocket-client', version: '2.5'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.5'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.9.6'
     compile group: 'com.jsoniter', name: 'jsoniter', version: '0.9.22'
     compile group: 'javassist', name: 'javassist', version: '3.12.1.GA'
     compile group: 'org.apache.httpcomponents', name: 'httpasyncclient', version: '4.1.3'
