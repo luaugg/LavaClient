@@ -9,7 +9,8 @@ This page doesn't go into too much detail, so please [check out the Wiki instead
 The [Documentation for the Latest Version can also be found here.](https://samophis.github.io/LavaClient)
 
 Projects made using LavaClient:
-* [Kyoko](https://github.com/KyokoBot/Kyoko)
+* [Kyoko](https://github.com/KyokoBot/Kyoko) - A cool, modular Discord Bot made in [JDA](https://github.com/DV8FromTheWorld/JDA)
+* [LavaClient-JDA](https://github.com/SamOphis/LavaClient-JDA) - Official LavaClient integration for [JDA](https://github.com/DV8FromTheWorld/JDA).
 
 > Note: People migrating from LavaClient to LavaClient v2 now must add [Lavaplayer](https://github.com/sedmelluq/lavaplayer) to their build file themselves.
 
