@@ -1,9 +1,11 @@
 # LavaClient
-[![](https://jitpack.io/v/SamOphis/LavaClient.svg)](https://jitpack.io/#SamOphis/LavaClient)
+[![JitPack](https://jitpack.io/v/SamOphis/LavaClient.svg)](https://jitpack.io/#SamOphis/LavaClient)
 [![Build Status](https://travis-ci.org/SamOphis/LavaClient.svg?branch=master)](https://travis-ci.org/SamOphis/LavaClient)
 
+[![LavaClient Guild](https://discordapp.com/api/guilds/455002103757406218/embed.png?style=banner2)](https://discord.gg/dvUhTJX)
+
 LavaClient is a fast, feature-complete **and abstract** client implementation for [Lavalink v2.x and v3.x](https://github.com/Frederikam/Lavalink) that
-doesn't depend on any Discord API Library.
+doesn't depend on any Discord API Library. Although being abstract, it supports [JDA](https://github.com/DV8FromTheWorld/JDA) via the [LavaClient-JDA](https://github.com/SamOphis/LavaClient-JDA) project.
 
 This page doesn't go into too much detail, so please [check out the Wiki instead.](https://github.com/SamOphis/LavaClient/wiki)  
 The [Documentation for the Latest Version can also be found here.](https://samophis.github.io/LavaClient)
@@ -38,6 +40,8 @@ you to do this easily such as the aforementioned ones, then you can take advanta
 
 If you really cannot use those libraries though, you'll need at the very bare minimum a semi-complete Discord Gateway Implementation before you can
 even begin using LavaClient. An example of how you can handle just the rate limiting part [can be found here.](https://gist.github.com/SamOphis/766c62d6fb91bac77ea9f2dea0edb330)
+
+As of the 14th June 2018, a [LavaClient integration for JDA](https://github.com/SamOphis/LavaClient-JDA) exists however the problem still remains for other libraries.
 
 # Creating and Adding Nodes to a LavaClient Instance
 
