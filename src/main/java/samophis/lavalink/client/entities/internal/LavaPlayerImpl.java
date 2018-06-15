@@ -258,6 +258,7 @@ public class LavaPlayerImpl implements LavaPlayer {
             LOGGER.warn("Attempt to destroy player for Guild ID: {} while in the {} state!", guild_id, state.name());
             throw new IllegalStateException("State != CONNECTED");
         }
+        client.removePlayer(guild_id);
         state = State.DESTROYED;
         node.getSocket().sendText(JsonStream.serialize(new DestroyPlayer(guild_id)));
     }

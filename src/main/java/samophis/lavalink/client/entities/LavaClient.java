@@ -239,8 +239,31 @@ public abstract class LavaClient {
     public abstract LavaPlayer newPlayer(@Nonnegative long guild_id);
 
     /**
+     * Attempts to remove a {@link LavaPlayer LavaPlayer} instance associated with a <b>positive</b> Guild ID.
+     * <br><p>If a player is found, it'll be removed and disconnected only if it's connected and if {@code shouldDestroy} is set to true.
+     * If it isn't found, nothing will happen and {@code null} will be returned.</p>
+     * @param guild_id The <b>positive</b> Guild ID associated with the {@link LavaPlayer LavaPlayer} instance.
+     * @param shouldDestroy If LavaClient should destroy the player before removing it.
+     * @return A <b>possibly-null</b> {@link LavaPlayer LavaPlayer} instance.
+     * @throws IllegalArgumentException If the provided Guild ID was negative.
+     */
+    @Nullable
+    public abstract LavaPlayer removePlayer(@Nonnegative long guild_id, boolean shouldDestroy);
+
+    /**
+     * Attempts to remove a {@link LavaPlayer LavaPlayer} instance associated with a <b>positive</b> Guild ID.
+     * <br><p>If a player is found, it'll simply be removed without anything else happening.
+     * If it isn't found, nothing will happen and {@code null} will be returned.</p>
+     * @param guild_id The <b>positive</b> Guild ID associated with the {@link LavaPlayer LavaPlayer} instance.
+     * @return A <b>possibly-null</b> {@link LavaPlayer LavaPlayer} instance.
+     * @throws IllegalArgumentException If the provided Guild ID was negative.
+     */
+    public abstract LavaPlayer removePlayer(@Nonnegative long guild_id);
+
+    /**
      * Shuts down LavaClient (also resetting the state).
-     * <br><p>This method removes and disconnects from all {@link AudioNode AudioNodes} and additionally shuts down the attached {@link LavaHttpManager LavaHttpManager}.</p>
+     * <br><p>This method removes and disconnects from all {@link AudioNode AudioNodes} and {@link LavaPlayer LavaPlayers}
+     * and additionally shuts down the attached {@link LavaHttpManager LavaHttpManager}.</p>
      * @throws IllegalStateException If this client has already been shutdown.
      */
     public abstract void shutdown();

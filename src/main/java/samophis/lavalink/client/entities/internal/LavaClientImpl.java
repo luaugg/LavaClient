@@ -172,12 +172,27 @@ public class LavaClientImpl extends LavaClient {
     public Long2ObjectMap<LavaPlayer> getPlayerMap() {
         return Long2ObjectMaps.unmodifiable(players);
     }
+    @Nullable
+    @Override
+    public LavaPlayer removePlayer(long guild_id) {
+        return removePlayer(guild_id, false);
+    }
+    @Nullable
+    @Override
+    public LavaPlayer removePlayer(long guild_id, boolean shouldDestroy) {
+        LavaPlayer player = players.get(Asserter.requireNotNegative(guild_id));
+        if (player == null)
+            return null;
+        if (shouldDestroy)
+            player.destroyPlayer();
+        return players.remove(guild_id);
+    }
     @Override
     public void shutdown() {
         if (isShutdown)
             throw new IllegalStateException("This LavaClient instance is already shutdown!");
         isShutdown = true;
-        players.values().forEach(LavaPlayer::destroyPlayer);
+        players.values().forEach(player -> removePlayer(player.getGuildId(), true));
         nodes.values().forEach(this::removeNode);
         manager.shutdown();
     }
