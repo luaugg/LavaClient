@@ -18,8 +18,10 @@ package samophis.lavalink.client.entities;
 
 import com.jsoniter.any.Any;
 import com.neovisionaries.ws.client.WebSocket;
+import samophis.lavalink.client.entities.internal.SocketHandlerImpl;
 
 import javax.annotation.Nonnull;
+import java.util.function.BiConsumer;
 
 /**
  * A handler which takes incoming messages from Lavalink Nodes and responds in some way.
@@ -42,4 +44,15 @@ public interface SocketHandler {
      * @param data The <b>not-null</b> data from the event.
      */
     void handleIncoming(@Nonnull WebSocket socket, @Nonnull Any data);
+
+    /**
+     * Creates a new SocketHandler instance with a provided name and event handler.
+     * @param name The <b>not-null</b> name of the SocketHandler.
+     * @param rawHandler The <b>not-null</b> handler callback used to respond to incoming events.
+     * @return A <b>not-null</b> SocketHandler instance.
+     */
+    @Nonnull
+    static SocketHandler from(@Nonnull String name, @Nonnull BiConsumer<WebSocket, Any> rawHandler) {
+        return new SocketHandlerImpl(name, rawHandler);
+    }
 }
