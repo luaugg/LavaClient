@@ -41,7 +41,7 @@ public interface AudioWrapper {
 
     /**
      * Determines whether or not the loaded tracks are the contents of a playlist or simply a search result.
-     * <br><p><b>Note: This <b>WILL RETURN FALSE ALL THE TIME</b> if the used {@link AudioNode AudioNode} is running Lavalink Server v2 (NOT v3).</b></p>
+     * <br><p><b>Note: This WILL RETURN FALSE ALL THE TIME if the used {@link AudioNode AudioNode} is running Lavalink Server v2 (NOT v3).</b></p>
      * @return Whether the result was from a playlist or a search.
      */
     boolean isPlaylist();
