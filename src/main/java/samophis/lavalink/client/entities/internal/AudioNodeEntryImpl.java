@@ -107,4 +107,8 @@ public class AudioNodeEntryImpl implements AudioNodeEntry {
     public SocketHandler getHandlerByName(@Nonnull String name) {
         return handlers.get(Asserter.requireNotNull(name));
     }
+    @Nonnull
+    public Map<String, SocketHandler> getInternalHandlerMap() {
+        return handlers;
+    }
 }
