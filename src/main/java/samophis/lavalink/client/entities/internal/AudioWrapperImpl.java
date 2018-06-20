@@ -17,6 +17,7 @@
 package samophis.lavalink.client.entities.internal;
 
 import samophis.lavalink.client.entities.AudioWrapper;
+import samophis.lavalink.client.entities.LoadType;
 import samophis.lavalink.client.entities.TrackDataPair;
 import samophis.lavalink.client.util.Asserter;
 
@@ -30,11 +31,15 @@ public class AudioWrapperImpl implements AudioWrapper {
     private final TrackDataPair selected;
     private final List<TrackDataPair> tracks;
     private final String name;
-    public AudioWrapperImpl(@Nullable String name, @Nullable TrackDataPair selected, @Nonnull List<TrackDataPair> tracks, boolean isPlaylist) {
-        this.name = isPlaylist ? Asserter.requireNotNull(name) : null;
-        this.selected = isPlaylist ? Asserter.requireNotNull(selected) : null;
-        this.tracks = Collections.unmodifiableList(Asserter.requireNotNull(tracks));
-        this.isPlaylist = isPlaylist;
+    private final LoadType type;
+    public AudioWrapperImpl(@Nullable String name, @Nullable TrackDataPair selected, @Nonnull List<TrackDataPair> tracks, LoadType type) {
+        Asserter.requireNotNull(tracks);
+        Asserter.requireNotNull(type);
+        this.name = type == LoadType.PLAYLIST_LOADED ? Asserter.requireNotNull(name) : null;
+        this.selected = type == LoadType.PLAYLIST_LOADED ? Asserter.requireNotNull(selected) : null;
+        this.tracks = Collections.unmodifiableList(tracks);
+        this.isPlaylist = type == LoadType.PLAYLIST_LOADED;
+        this.type = type;
     }
     @Override
     public boolean isPlaylist() {
@@ -54,5 +59,10 @@ public class AudioWrapperImpl implements AudioWrapper {
     @Override
     public String getPlaylistName() {
         return name;
+    }
+    @Nonnull
+    @Override
+    public LoadType getLoadType() {
+        return type;
     }
 }

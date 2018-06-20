@@ -55,7 +55,7 @@ public class LavaClientImpl extends LavaClient {
                 .expireAfterWrite(expireWriteMs, TimeUnit.MILLISECONDS)
                 .expireAfterAccess(expireAccessMs, TimeUnit.MILLISECONDS)
                 .build();
-        entries.forEach(entry -> nodes.put(entry.getRawAddress() + entry.getWebSocketPort(), new AudioNodeImpl(this, entry)));
+        entries.forEach(entry -> nodes.put(entry.getRawAddress() + entry.getWebSocketPort(), new AudioNodeImpl(this, (AudioNodeEntryImpl) entry)));
         this.isShutdown = false;
     }
     @Nonnull
@@ -106,7 +106,7 @@ public class LavaClientImpl extends LavaClient {
     @Override
     public void addEntry(@Nonnull AudioNodeEntry entry) {
         Asserter.requireNotNull(entry);
-        nodes.put(entry.getRawAddress() + entry.getWebSocketPort(), new AudioNodeImpl(this, entry));
+        nodes.put(entry.getRawAddress() + entry.getWebSocketPort(), new AudioNodeImpl(this, (AudioNodeEntryImpl) entry));
     }
     @Override
     public void removeEntry(@Nonnull AudioNodeEntry entry) {

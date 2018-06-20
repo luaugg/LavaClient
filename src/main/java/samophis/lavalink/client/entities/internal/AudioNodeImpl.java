@@ -45,13 +45,13 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
     private static final Logger LOGGER = LoggerFactory.getLogger(AudioNodeImpl.class);
     private final LavaClient client;
     private final LoadBalancer balancer;
-    private final AudioNodeEntry entry;
+    private final AudioNodeEntryImpl entry;
     private WebSocket socket;
     private Statistics statistics;
     private AtomicInteger reconnectInterval, reconnectAttempts;
     private volatile boolean usingVersionThree;
     @SuppressWarnings("WeakerAccess")
-    public AudioNodeImpl(@Nonnull LavaClient client, @Nonnull AudioNodeEntry entry) {
+    public AudioNodeImpl(@Nonnull LavaClient client, @Nonnull AudioNodeEntryImpl entry) {
         Asserter.requireNotNull(client);
         Asserter.requireNotNull(entry);
         this.client = client;
@@ -74,6 +74,73 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
             LOGGER.error("Unrecoverable Exception when creating WebSocket! {}", exc.getMessage());
             throw new RuntimeException(exc);
         }
+        init();
+    }
+    private void init() {
+        Map<String, SocketHandler> handlers = entry.getInternalHandlerMap();
+        SocketHandler playerUpdateHandler = SocketHandler.from("playerUpdate", (socket, data) -> {
+            Any json = JsonIterator.deserialize(data);
+            long guild_id = Long.parseUnsignedLong(json.get("guildId").toString());
+            LavaPlayer player = client.getPlayerByGuildId(guild_id);
+            if (player == null) {
+                LOGGER.error("Player is null for Guild ID: {}", guild_id);
+                throw new IllegalStateException("Player == null");
+            }
+            PlayerUpdate update = JsonIterator.deserialize(data, PlayerUpdate.class);
+            ((LavaPlayerImpl) player).setTimestamp(update.state.time)
+                    .setPosition(update.state.position);
+        });
+        SocketHandler statsHandler = SocketHandler.from("stats", (socket, data) -> {
+            Stats stats = JsonIterator.deserialize(data, Stats.class);
+            StatisticsBuilder builder = new StatisticsBuilder(this)
+                    .setPlayers(stats.players)
+                    .setPlayingPlayers(stats.playingPlayers)
+                    .setUptime(stats.uptime)
+                    .setFree(stats.memory.free)
+                    .setUsed(stats.memory.used)
+                    .setAllocated(stats.memory.allocated)
+                    .setReservable(stats.memory.reservable)
+                    .setCores(stats.cpu.cores)
+                    .setSystemLoad(stats.cpu.systemLoad)
+                    .setLavalinkLoad(stats.cpu.lavalinkLoad);
+            if (stats.frameStats != null) {
+                builder.setSent(stats.frameStats.sent)
+                        .setNulled(stats.frameStats.nulled)
+                        .setDeficit(stats.frameStats.deficit);
+            }
+            statistics = builder.build();
+        });
+        SocketHandler trackEventHandler = SocketHandler.from("event", (socket, data) -> {
+            Any json = JsonIterator.deserialize(data);
+            long guild_id = Long.parseUnsignedLong(json.get("guildId").toString());
+            LavaPlayer player = client.getPlayerByGuildId(guild_id);
+            if (player == null) {
+                LOGGER.error("Player is null for Guild ID: {}", guild_id);
+                throw new IllegalStateException("Player == null");
+            }
+            ((LavaPlayerImpl) player).setTrack(null);
+            AudioTrack track = LavaClientUtil.toAudioTrack(json.get("track").toString());
+            String type = json.get("type").toString();
+            PlayerTrackEvent event;
+            switch (type) {
+                case "TrackEndEvent":
+                    event = new TrackEndEvent(player, track, AudioTrackEndReason.valueOf(json.get("reason").toString()));
+                    break;
+                case "TrackExceptionEvent":
+                    event = new TrackExceptionEvent(player, track, new RuntimeException(json.get("error").toString()));
+                    break;
+                case "TrackStuckEvent":
+                    event = new TrackStuckEvent(player, track, json.get("thresholdMs").toLong());
+                    break;
+                default:
+                    LOGGER.warn("Unknown/unhandled Track Event from Lavalink, Name: {}, Guild ID: {}", type, guild_id);
+                    throw new UnsupportedOperationException("Unknown + unhandled event from Lavalink: " + type);
+            }
+            player.emitEvent(event);
+        });
+        handlers.put(playerUpdateHandler.getName(), playerUpdateHandler);
+        handlers.put(statsHandler.getName(), statsHandler);
+        handlers.put(trackEventHandler.getName(), trackEventHandler);
     }
     @Override
     @Nonnull
@@ -131,58 +198,12 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
     public void onTextMessage(WebSocket websocket, String text) {
         Any data = JsonIterator.deserialize(text);
         String op = data.get("op").toString();
-        LavaPlayer player;
-        switch (op) {
-            case "playerUpdate":
-                PlayerUpdate update = JsonIterator.deserialize(text, PlayerUpdate.class);
-                player = client.getPlayerByGuildId(Long.parseUnsignedLong(update.guildId));
-                ((LavaPlayerImpl) player).setPosition(update.state.position)
-                        .setTimestamp(update.state.time);
-                break;
-            case "stats":
-                Stats stats = JsonIterator.deserialize(text, Stats.class);
-                StatisticsBuilder builder = new StatisticsBuilder(this)
-                        .setPlayers(stats.players)
-                        .setPlayingPlayers(stats.playingPlayers)
-                        .setUptime(stats.uptime)
-                        .setFree(stats.memory.free)
-                        .setUsed(stats.memory.used)
-                        .setAllocated(stats.memory.allocated)
-                        .setReservable(stats.memory.reservable)
-                        .setCores(stats.cpu.cores)
-                        .setSystemLoad(stats.cpu.systemLoad)
-                        .setLavalinkLoad(stats.cpu.lavalinkLoad);
-                if (stats.frameStats != null) {
-                    builder.setSent(stats.frameStats.sent)
-                            .setNulled(stats.frameStats.nulled)
-                            .setDeficit(stats.frameStats.deficit);
-                }
-                statistics = builder.build();
-                break;
-            case "event":
-                player = client.getPlayerByGuildId(Long.parseUnsignedLong(data.get("guildId").toString()));
-                AudioTrack track = LavaClientUtil.toAudioTrack(data.get("track").toString());
-                String type = data.get("type").toString();
-                PlayerTrackEvent event;
-                ((LavaPlayerImpl) player).setTrack(null);
-                switch (type) {
-                    case "TrackEndEvent":
-                        event = new TrackEndEvent(player, track, AudioTrackEndReason.valueOf(data.get("reason").toString()));
-                        break;
-                    case "TrackExceptionEvent":
-                        event = new TrackExceptionEvent(player, track, new RuntimeException(data.get("error").toString()));
-                        break;
-                    case "TrackStuckEvent":
-                        event = new TrackStuckEvent(player, track, data.get("thresholdMs").toLong());
-                        break;
-                    default:
-                        throw new UnsupportedOperationException("Unknown + unhandled event from Lavalink: " + type);
-                }
-                player.emitEvent(event);
-                break;
-            default:
-                throw new UnsupportedOperationException("Unknown + unhandled message from Lavalink: " + op);
+        SocketHandler handler = entry.getHandlerByName(op);
+        if (handler == null) {
+            LOGGER.warn("Missing/Unhandled Handler for OP: {}", op);
+            return;
         }
+        handler.handleIncoming(websocket, text);
     }
     @Override
     @Nonnull

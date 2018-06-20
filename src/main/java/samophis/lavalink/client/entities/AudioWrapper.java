@@ -22,13 +22,23 @@ import java.util.List;
 
 /**
  * Wraps a playlist of loaded tracks or a singular track into one object.
- * <br><p>This is used (and is different from v0.3) simply to be compatible with Lavalink Server v3 and to contain the loaded track(s) in one object.</p>
+ * <br><p>This is used (and is different from v0.3) simply to be compatible with Lavalink Server v3 and to contain the loaded track(s) in one object.
+ *
+ * <br>Older versions of Lavalink <b>DO NOT</b> fully support the {@link #getLoadType()} and {@link #isPlaylist()} methods.</p>
  *
  * @since 1.0.0
  * @author SamOphis
  */
 
 public interface AudioWrapper {
+    /**
+     * Returns the type of loading that occurred.
+     * <br><p><b>Older versions of Lavalink do not fully support this and will usually return {@link LoadType#UNKNOWN UNKNOWN}.</b></p>
+     * @return A <b>not-null</b> {@link LoadType LoadType}.
+     */
+    @Nonnull
+    LoadType getLoadType();
+
     /**
      * Determines whether or not the loaded tracks are the contents of a playlist or simply a search result.
      * <br><p><b>Note: This WILL RETURN FALSE ALL THE TIME if the used {@link AudioNode AudioNode} is running Lavalink Server v2 (NOT v3).</b></p>

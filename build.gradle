@@ -7,7 +7,7 @@ plugins {
 
 group 'samophis'
 description 'Fast client implementation for Lavalink.'
-version '2.1.0'
+version '2.3.0'
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
@@ -48,6 +48,17 @@ build {
     javadocJar.mustRunAfter jar
     sourcesJar.mustRunAfter javadocJar
     shadowJar.mustRunAfter sourcesJar
+}
+
+javadoc {
+    options.memberLevel = JavadocMemberLevel.PUBLIC
+    options.author()
+    options.encoding = 'UTF-8'
+
+    exclude('samophis/lavalink/client/entities/builders')
+    exclude('samophis/lavalink/client/entities/events')
+    exclude('samophis/lavalink/client/entities/internal')
+    exclude('samophis/lavalink/client/entities/messages')
 }
 
 artifacts {

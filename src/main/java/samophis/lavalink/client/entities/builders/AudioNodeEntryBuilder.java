@@ -16,23 +16,28 @@
 
 package samophis.lavalink.client.entities.builders;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import samophis.lavalink.client.entities.AudioNodeEntry;
 import samophis.lavalink.client.entities.LavaClient;
+import samophis.lavalink.client.entities.SocketHandler;
 import samophis.lavalink.client.entities.SocketInitializer;
 import samophis.lavalink.client.entities.internal.AudioNodeEntryImpl;
 import samophis.lavalink.client.util.Asserter;
 
 import javax.annotation.Nonnull;
+import java.util.Map;
 
 @SuppressWarnings("unused")
 public class AudioNodeEntryBuilder {
     private final LavaClient client;
+    private final Map<String, SocketHandler> handlers;
     private String address, password;
     private int restPort, wsPort;
     private SocketInitializer initializer;
     @SuppressWarnings({"deprecation", "WeakerAccess"})
     public AudioNodeEntryBuilder(@Nonnull LavaClient client) {
         this.client = Asserter.requireNotNull(client);
+        this.handlers = new Object2ObjectOpenHashMap<>();
     }
     public AudioNodeEntryBuilder setAddress(String address) {
         this.address = address;
@@ -54,7 +59,11 @@ public class AudioNodeEntryBuilder {
         this.initializer = initializer;
         return this;
     }
+    public AudioNodeEntryBuilder addSocketHandler(SocketHandler handler) {
+        this.handlers.put(Asserter.requireNotNull(handler).getName(), handler);
+        return this;
+    }
     public AudioNodeEntry build() {
-        return new AudioNodeEntryImpl(client, address, password, restPort, wsPort, initializer);
+        return new AudioNodeEntryImpl(client, address, password, restPort, wsPort, initializer, handlers);
     }
 }

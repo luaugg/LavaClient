@@ -16,13 +16,10 @@
 
 package samophis.lavalink.client.entities.messages.server.result;
 
-import com.jsoniter.annotation.JsonMissingProperties;
-
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class PlaylistInfo {
-    public String name;
-    public Integer selectedTrack;
-    @JsonMissingProperties public List<String> missingFields;
+    @JsonProperty public String name;
+    @JsonProperty public Integer selectedTrack;
 }
