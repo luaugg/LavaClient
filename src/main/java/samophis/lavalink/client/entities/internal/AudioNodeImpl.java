@@ -45,13 +45,13 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
     private static final Logger LOGGER = LoggerFactory.getLogger(AudioNodeImpl.class);
     private final LavaClient client;
     private final LoadBalancer balancer;
-    private final AudioNodeEntry entry;
+    private final AudioNodeEntryImpl entry;
     private WebSocket socket;
     private Statistics statistics;
     private AtomicInteger reconnectInterval, reconnectAttempts;
     private volatile boolean usingVersionThree;
     @SuppressWarnings("WeakerAccess")
-    public AudioNodeImpl(@Nonnull LavaClient client, @Nonnull AudioNodeEntry entry) {
+    public AudioNodeImpl(@Nonnull LavaClient client, @Nonnull AudioNodeEntryImpl entry) {
         Asserter.requireNotNull(client);
         Asserter.requireNotNull(entry);
         this.client = client;
