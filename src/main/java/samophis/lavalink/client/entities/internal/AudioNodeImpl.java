@@ -120,7 +120,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
             }
             ((LavaPlayerImpl) player).setTrack(null);
             AudioTrack track = LavaClientUtil.toAudioTrack(json.get("track").toString());
-            String type = json.get("type").toString();]
+            String type = json.get("type").toString();
             PlayerTrackEvent event;
             switch (type) {
                 case "TrackEndEvent":
