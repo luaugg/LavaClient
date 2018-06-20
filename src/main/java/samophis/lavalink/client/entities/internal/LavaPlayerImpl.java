@@ -208,7 +208,7 @@ public class LavaPlayerImpl implements LavaPlayer {
         if (pair != null) {
             List<TrackDataPair> pairs = new ObjectArrayList<>(1);
             pairs.add(pair);
-            return new AudioWrapperImpl(null, null, pairs, false);
+            return new AudioWrapperImpl(null, null, pairs, LoadType.TRACK_LOADED);
         }
         AtomicReference<AudioWrapper> reference = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
@@ -239,7 +239,7 @@ public class LavaPlayerImpl implements LavaPlayer {
         if (pair != null) {
             List<TrackDataPair> pairs = new ObjectArrayList<>(1);
             pairs.add(pair);
-            callback.accept(new AudioWrapperImpl(null, null, pairs, false));
+            callback.accept(new AudioWrapperImpl(null, null, pairs, LoadType.TRACK_LOADED));
             return;
         }
         client.getHttpManager().resolveTracks(identifier, callback);
