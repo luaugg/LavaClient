@@ -16,7 +16,6 @@
 
 package samophis.lavalink.client.entities;
 
-import com.jsoniter.any.Any;
 import com.neovisionaries.ws.client.WebSocket;
 import samophis.lavalink.client.entities.internal.SocketHandlerImpl;
 
@@ -43,7 +42,7 @@ public interface SocketHandler {
      * @param socket The <b>not-null</b> WebSocket connection between LavaClient and a Lavalink Node.
      * @param data The <b>not-null</b> data from the event.
      */
-    void handleIncoming(@Nonnull WebSocket socket, @Nonnull Any data);
+    void handleIncoming(@Nonnull WebSocket socket, @Nonnull String data);
 
     /**
      * Creates a new SocketHandler instance with a provided name and event handler.
@@ -52,7 +51,7 @@ public interface SocketHandler {
      * @return A <b>not-null</b> SocketHandler instance.
      */
     @Nonnull
-    static SocketHandler from(@Nonnull String name, @Nonnull BiConsumer<WebSocket, Any> rawHandler) {
+    static SocketHandler from(@Nonnull String name, @Nonnull BiConsumer<WebSocket, String> rawHandler) {
         return new SocketHandlerImpl(name, rawHandler);
     }
 }

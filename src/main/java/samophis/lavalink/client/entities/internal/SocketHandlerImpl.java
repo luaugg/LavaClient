@@ -16,7 +16,6 @@
 
 package samophis.lavalink.client.entities.internal;
 
-import com.jsoniter.any.Any;
 import com.neovisionaries.ws.client.WebSocket;
 import samophis.lavalink.client.entities.SocketHandler;
 import samophis.lavalink.client.util.Asserter;
@@ -26,8 +25,8 @@ import java.util.function.BiConsumer;
 
 public class SocketHandlerImpl implements SocketHandler {
     private final String name;
-    private final BiConsumer<WebSocket, Any> rawHandler;
-    public SocketHandlerImpl(@Nonnull String name, @Nonnull BiConsumer<WebSocket, Any> rawHandler) {
+    private final BiConsumer<WebSocket, String> rawHandler;
+    public SocketHandlerImpl(@Nonnull String name, @Nonnull BiConsumer<WebSocket, String> rawHandler) {
         this.name = Asserter.requireNotNull(name);
         this.rawHandler = Asserter.requireNotNull(rawHandler);
     }
@@ -37,7 +36,7 @@ public class SocketHandlerImpl implements SocketHandler {
         return name;
     }
     @Override
-    public void handleIncoming(@Nonnull WebSocket socket, @Nonnull Any data) {
+    public void handleIncoming(@Nonnull WebSocket socket, @Nonnull String data) {
         rawHandler.accept(Asserter.requireNotNull(socket), Asserter.requireNotNull(data));
     }
 }
