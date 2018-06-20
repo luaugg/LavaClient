@@ -111,14 +111,21 @@ public class LavaHttpManagerImpl implements LavaHttpManager {
                     TrackDataPair selectedPair = null;
                     if (selected != null && selected < pairs.size())
                         selectedPair = pairs.get(selected);
-                    wrapper = new AudioWrapperImpl(res.playlistInfo.name, selectedPair, pairs, res.isPlaylist);
+                    LoadType type;
+                    if (res.isPlaylist == null)
+                        type = LoadType.from(res.loadType);
+                    else if (res.isPlaylist)
+                        type = LoadType.PLAYLIST_LOADED;
+                    else
+                        type = LoadType.UNKNOWN; // Just to be safe.
+                    wrapper = new AudioWrapperImpl(res.playlistInfo.name, selectedPair, pairs, type);
                 }
                 else {
                     TrackObject[] objects = JsonIterator.deserialize(content, TrackObject[].class);
                     List<TrackDataPair> pairs = new ObjectArrayList<>(objects.length);
                     for (TrackObject obj : objects)
                         pairs.add(new TrackDataPairImpl(obj.track));
-                    wrapper = new AudioWrapperImpl(null, null, pairs, false);
+                    wrapper = new AudioWrapperImpl(null, null, pairs, LoadType.UNKNOWN);
                 }
                 callback.accept(wrapper);
             }
