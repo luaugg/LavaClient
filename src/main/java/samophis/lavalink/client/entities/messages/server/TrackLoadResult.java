@@ -15,6 +15,7 @@
  */
 
 package samophis.lavalink.client.entities.messages.server;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import samophis.lavalink.client.entities.messages.server.result.PlaylistInfo;
 import samophis.lavalink.client.entities.messages.server.result.TrackObject;
 
@@ -22,5 +23,6 @@ import samophis.lavalink.client.entities.messages.server.result.TrackObject;
 public class TrackLoadResult {
     public PlaylistInfo playlistInfo;
     public TrackObject[] tracks;
-    public boolean isPlaylist;
+    @JsonProperty public Boolean isPlaylist;
+    @JsonProperty public String loadType;
 }
