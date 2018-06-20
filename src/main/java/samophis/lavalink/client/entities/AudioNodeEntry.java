@@ -19,6 +19,8 @@ package samophis.lavalink.client.entities;
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Represents an entry for an {@link AudioNode AudioNode} with configuration options.
@@ -88,5 +90,28 @@ public interface AudioNodeEntry {
      * Fetches the <b>possibly-null</b> {@link SocketInitializer SocketInitializer} used to "initialize" a LavaClient WebSocket connection.
      * @return The <b>possibly-null</b> {@link SocketInitializer SocketInitializer} attached to this node entry.
      */
-    @Nullable SocketInitializer getSocketInitializer();
+    @Nullable
+    SocketInitializer getSocketInitializer();
+
+    /**
+     * Fetches an unmodifiable view of the internal {@link SocketHandler SocketHandler} map.
+     * @return An unmodifiable view of the handler map.
+     */
+    @Nonnull
+    Map<String, SocketHandler> getHandlerMap();
+
+    /**
+     * Fetches an unmodifiable list containing all the {@link SocketHandler SocketHandlers} registered to this entry.
+     * @return An unmodifiable list containing {@link SocketHandler SocketHandlers}.
+     */
+    @Nonnull
+    List<SocketHandler> getHandlers();
+
+    /**
+     * Attempts to fetch a {@link SocketHandler SocketHandler} registered to this entry associated with a given name.
+     * @param name The <b>not-null</b> name to look-up.
+     * @return A <b>possibly-null</b> {@link SocketHandler SocketHandler} instance.
+     */
+    @Nullable
+    SocketHandler getHandlerByName(@Nonnull String name);
 }
