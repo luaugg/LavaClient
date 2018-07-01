@@ -338,6 +338,7 @@ public class LavaPlayerImpl implements LavaPlayer {
     private void handleTrackPair(TrackDataPair pair, long start, long end) {
         String data = JsonStream.serialize(new PlayTrack(guild_id, start, end, pair.getTrackData()));
         TrackStartEvent event = new TrackStartEvent(this, pair.getTrack());
+        track = event.getTrack();
         setNode(client.getBestNode());
         node.getSocket().sendText(data);
         emitEvent(event);

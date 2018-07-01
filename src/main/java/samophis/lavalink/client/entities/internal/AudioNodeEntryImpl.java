@@ -35,11 +35,12 @@ import java.util.regex.Pattern;
 public class AudioNodeEntryImpl implements AudioNodeEntry {
     private static final Pattern HTTP_PATTERN = Pattern.compile("^https?://");
     private static final Pattern WS_PATTERN = Pattern.compile("^wss?://");
-    public final LavaClient client;
-    private final String address, password, httpAddress, wsAddress;
-    private final int rest, ws;
-    private final SocketInitializer initializer;
-    private final Map<String, SocketHandler> handlers;
+    public LavaClient client;
+    private String address, password, httpAddress, wsAddress;
+    private int rest, ws;
+    private final boolean fileBased;
+    private SocketInitializer initializer;
+    private Map<String, SocketHandler> handlers;
     public AudioNodeEntryImpl(LavaClient client, String address, String password, int rest, int ws,
                               SocketInitializer initializer, Map<String, SocketHandler> handlers) {
         this.client = Asserter.requireNotNull(client);
@@ -49,8 +50,12 @@ public class AudioNodeEntryImpl implements AudioNodeEntry {
         this.password = password == null ? client.getGlobalServerPassword() : password;
         this.rest = rest == 0 ? client.getGlobalRestPort() : rest;
         this.ws = ws == 0 ? client.getGlobalWebSocketPort() : ws;
-        this.initializer = Asserter.requireNotNull(initializer);
+        this.initializer = initializer;
         this.handlers = Asserter.requireNotNull(handlers);
+        this.fileBased = false;
+    }
+    public AudioNodeEntryImpl() {
+        this.fileBased = true;
     }
     @Override
     @Nonnull
@@ -110,5 +115,38 @@ public class AudioNodeEntryImpl implements AudioNodeEntry {
     @Nonnull
     public Map<String, SocketHandler> getInternalHandlerMap() {
         return handlers;
+    }
+    public boolean isFileBased() {
+        return fileBased;
+    }
+    public AudioNodeEntryImpl setAddress(String address) {
+        this.address = address;
+        this.httpAddress = !HTTP_PATTERN.matcher(address).find() ? "http://" + address : address;
+        this.wsAddress = !WS_PATTERN.matcher(address).find() ? "ws://" + address : address;
+        return this;
+    }
+    public AudioNodeEntryImpl setPassword(String password) {
+        this.password = password;
+        return this;
+    }
+    public AudioNodeEntryImpl setRest(int rest) {
+        this.rest = rest;
+        return this;
+    }
+    public AudioNodeEntryImpl setWs(int ws) {
+        this.ws = ws;
+        return this;
+    }
+    public AudioNodeEntryImpl setInitializer(SocketInitializer initializer) {
+        this.initializer = initializer;
+        return this;
+    }
+    public AudioNodeEntryImpl setHandlers(Map<String, SocketHandler> handlers) {
+        this.handlers = handlers;
+        return this;
+    }
+    public AudioNodeEntryImpl setClient(LavaClient client) {
+        this.client = client;
+        return this;
     }
 }
