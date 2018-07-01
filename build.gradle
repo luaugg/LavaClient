@@ -1,11 +1,12 @@
 plugins {
     id 'java'
-    id 'maven'
+    id 'maven-publish'
+    id 'com.jfrog.bintray' version '1.8.3'
     id 'idea'
     id 'com.github.johnrengelman.shadow' version '2.0.4'
 }
 
-group 'samophis'
+group 'com.github.samophis'
 description 'Fast client implementation for Lavalink.'
 version '2.4.0'
 
@@ -32,7 +33,39 @@ task wrapper(type: Wrapper) {
 }
 
 shadowJar {
-    classifier = "withDependencies"
+    classifier = 'withDependencies'
+}
+
+// Credit to the JDA Developers
+
+bintray {
+    user = bintrayUsername
+    key = bintrayApiKey
+    publications = ['BintrayRelease']
+    pkg {
+        repo = 'maven'
+        name = 'LavaClient'
+        licenses = ['Apache-2.0']
+        vcsUrl = ['https://github.com/SamOphis/LavaClient.git']
+        publish = true
+        version {
+            name = project.version
+            released = new Date()
+        }
+    }
+}
+
+publishing {
+    publications {
+        BintrayRelease(MavenPublication) {
+            from components.java
+            groupId group
+            artifactId 'LavaClient'
+            version version
+            artifact javadocJar
+            artifact sourcesJar
+        }
+    }
 }
 
 build {
@@ -48,6 +81,25 @@ build {
     javadocJar.mustRunAfter jar
     sourcesJar.mustRunAfter javadocJar
     shadowJar.mustRunAfter sourcesJar
+}
+
+// Credit to the JDA Development Team
+
+String getProjectProperty(String propertyName)
+{
+    String property = ""
+    if (hasProperty(propertyName))
+    {
+        property = this.properties[propertyName]
+    }
+    return property
+}
+
+bintrayUpload {
+    dependsOn build
+
+    onlyIf { !getProjectProperty("bintrayUsername").empty }
+    onlyIf { !getProjectProperty("bintrayApiKey").empty }
 }
 
 javadoc {
