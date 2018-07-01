@@ -158,9 +158,7 @@ public class LavaClientBuilder {
 
         JsonNode nodes = node.get("nodes");
         if (nodes != null && nodes.isArray()) {
-            Iterator<JsonNode> iter = nodes.iterator();
-            do {
-                JsonNode next = iter.next();
+            for (JsonNode next : nodes) {
                 String address = getOrThrowAndLog(next, "serverAddress").textValue();
                 String password = getStringOrElse(next, "password", this.password);
                 int restPort = getIntOrElse(next, "restPort", this.restPort);
@@ -172,7 +170,6 @@ public class LavaClientBuilder {
                         .setWs(Asserter.requireNotNegative(wsPort));
                 entries.add(entry);
             }
-            while (iter.hasNext());
         }
     }
     private JsonNode getOrThrowAndLog(JsonNode base, String name) {
