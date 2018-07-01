@@ -55,7 +55,12 @@ public class LavaClientImpl extends LavaClient {
                 .expireAfterWrite(expireWriteMs, TimeUnit.MILLISECONDS)
                 .expireAfterAccess(expireAccessMs, TimeUnit.MILLISECONDS)
                 .build();
-        entries.forEach(entry -> nodes.put(entry.getRawAddress() + entry.getWebSocketPort(), new AudioNodeImpl(this, (AudioNodeEntryImpl) entry)));
+        entries.forEach(entry -> {
+            AudioNodeEntryImpl impl = (AudioNodeEntryImpl) entry;
+            if (impl.isFileBased())
+                impl.setClient(this);
+            nodes.put(entry.getRawAddress() + entry.getWebSocketPort(), new AudioNodeImpl(this, impl));
+        });
         this.isShutdown = false;
     }
     @Nonnull
