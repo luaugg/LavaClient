@@ -16,6 +16,7 @@
 
 package samophis.lavalink.client.entities.internal;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
 import samophis.lavalink.client.entities.AudioNodeEntry;

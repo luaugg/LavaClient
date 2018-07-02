@@ -20,14 +20,14 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
-import it.unimi.dsi.fastutil.objects.ObjectList;
-import it.unimi.dsi.fastutil.objects.ObjectLists;
+import it.unimi.dsi.fastutil.objects.*;
 import samophis.lavalink.client.entities.*;
 import samophis.lavalink.client.util.Asserter;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -58,7 +58,7 @@ public class LavaClientImpl extends LavaClient {
         entries.forEach(entry -> {
             AudioNodeEntryImpl impl = (AudioNodeEntryImpl) entry;
             if (impl.isFileBased())
-                impl.setClient(this);
+                impl.setClient(this).setHandlers(new Object2ObjectOpenHashMap<>(0));
             nodes.put(entry.getRawAddress() + entry.getWebSocketPort(), new AudioNodeImpl(this, impl));
         });
         this.isShutdown = false;
@@ -136,12 +136,12 @@ public class LavaClientImpl extends LavaClient {
     @Nonnull
     @Override
     public List<AudioNode> getAudioNodes() {
-        return Collections.unmodifiableList((List<AudioNode>) nodes.values());
+        return new ObjectArrayList<>(Collections.unmodifiableCollection(nodes.values()));
     }
     @Nonnull
     @Override
     public List<LavaPlayer> getPlayers() {
-        return ObjectLists.unmodifiable((ObjectList<LavaPlayer>) players.values());
+        return new ObjectArrayList<>(ObjectCollections.unmodifiable(players.values()));
     }
     @Nullable
     @Override

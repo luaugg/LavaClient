@@ -38,7 +38,6 @@ import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Iterator;
 import java.util.List;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
@@ -157,7 +156,7 @@ public class LavaClientBuilder {
         }
 
         JsonNode nodes = node.get("nodes");
-        if (nodes != null && nodes.isArray()) {
+        if (nodes != null && nodes.isObject()) {
             for (JsonNode next : nodes) {
                 String address = getOrThrowAndLog(next, "serverAddress").textValue();
                 String password = getStringOrElse(next, "password", this.password);
