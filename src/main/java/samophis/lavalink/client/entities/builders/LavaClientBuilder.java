@@ -91,6 +91,7 @@ public class LavaClientBuilder {
         }
     }
     public LavaClientBuilder() {
+        init(true, LavaClient.DEFAULT_CACHE_EXPIRE_WRITE, LavaClient.DEFAULT_CACHE_EXPIRE_ACCESS);
         this.entries = new ObjectArrayList<>();
         this.password = LavaClient.PASSWORD_DEFAULT;
         this.restPort = LavaClient.REST_PORT_DEFAULT;
