@@ -1,6 +1,6 @@
 # LavaClient
-[![JitPack](https://jitpack.io/v/SamOphis/LavaClient.svg)](https://jitpack.io/#SamOphis/LavaClient)
 [![Build Status](https://travis-ci.org/SamOphis/LavaClient.svg?branch=master)](https://travis-ci.org/SamOphis/LavaClient)
+[![Download](https://api.bintray.com/packages/samophis/maven/LavaClient/images/download.svg) ](https://bintray.com/samophis/maven/LavaClient/_latestVersion) 
 
 [![LavaClient Guild](https://discordapp.com/api/guilds/455002103757406218/embed.png?style=banner2)](https://discord.gg/dvUhTJX)
 
