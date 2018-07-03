@@ -43,12 +43,12 @@ public class LavaPlayerImpl implements LavaPlayer {
     private final LavaClient client;
     private final List<AudioEventListener> listeners;
     private final long guild_id;
-    private int volume;
-    private long channel_id, position, timestamp;
-    private boolean paused;
-    private AudioNode node;
-    private AudioTrack track;
-    private State state;
+    private volatile int volume;
+    private volatile long channel_id, position, timestamp;
+    private volatile boolean paused;
+    private volatile AudioNode node;
+    private volatile AudioTrack track;
+    private volatile State state;
     @SuppressWarnings("WeakerAccess")
     public LavaPlayerImpl(@Nonnull LavaClient client, @Nonnegative long guild_id) {
         this.client = Asserter.requireNotNull(client);

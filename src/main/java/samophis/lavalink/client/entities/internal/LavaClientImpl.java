@@ -20,14 +20,15 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
-import it.unimi.dsi.fastutil.objects.*;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectCollections;
 import samophis.lavalink.client.entities.*;
 import samophis.lavalink.client.util.Asserter;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -38,7 +39,7 @@ public class LavaClientImpl extends LavaClient {
     private final int restPort, wsPort, shards;
     private final long expireWriteMs, expireAccessMs, userId;
     private final Cache<String, TrackDataPair> identifierCache;
-    private boolean isShutdown;
+    private volatile boolean isShutdown;
     public LavaClientImpl(String password, int restPort, int wsPort, int shards, long expireWriteMs, long expireAccessMs, long userId, List<AudioNodeEntry> entries) {
         super();
         this.manager = new LavaHttpManagerImpl(this);
