@@ -48,20 +48,23 @@ public class LavaClientBuilder {
     private String password;
     private int restPort, wsPort, shards;
     private long expireWriteMs, expireAccessMs, userId;
+    @Deprecated
     public LavaClientBuilder(boolean overrideJson, @Nonnegative long expireWriteMs, @Nonnegative long expireAccessMs) {
         this();
-        init(overrideJson, expireWriteMs, expireAccessMs);
+        init(expireWriteMs, expireAccessMs);
     }
-    public LavaClientBuilder(@Nonnegative long expireWriteMs, @Nonnegative long expireAccessMs) {
-        this(true, expireWriteMs, expireAccessMs);
-    }
+    @Deprecated
     public LavaClientBuilder(boolean overrideJson) {
         this(overrideJson, LavaClient.DEFAULT_CACHE_EXPIRE_WRITE, LavaClient.DEFAULT_CACHE_EXPIRE_ACCESS);
+    }
+    public LavaClientBuilder(@Nonnegative long expireWriteMs, @Nonnegative long expireAccessMs) {
+        this();
+        init(expireWriteMs, expireAccessMs);
     }
     public LavaClientBuilder(byte[] content) {
         this();
         try {
-            init(MAPPER.readTree(content));
+            init(MAPPER.readTree(Asserter.requireNotNull(content)));
         } catch (IOException exc) {
             LOGGER.error("Error when configuring LavaClient!", exc);
         }
@@ -69,7 +72,7 @@ public class LavaClientBuilder {
     public LavaClientBuilder(@Nonnull String content) {
         this();
         try {
-            init(MAPPER.readTree(content));
+            init(MAPPER.readTree(Asserter.requireNotNull(content)));
         } catch (IOException exc) {
             LOGGER.error("Error when configuring LavaClient!", exc);
         }
@@ -77,7 +80,7 @@ public class LavaClientBuilder {
     public LavaClientBuilder(@Nonnull File file) {
         this();
         try {
-            init(MAPPER.readTree(file));
+            init(MAPPER.readTree(Asserter.requireNotNull(file)));
         } catch (IOException exc) {
             LOGGER.error("Error when configuring LavaClient!", exc);
         }
@@ -85,13 +88,13 @@ public class LavaClientBuilder {
     public LavaClientBuilder(@Nonnull URL source) {
         this();
         try {
-            init(MAPPER.readTree(source));
+            init(MAPPER.readTree(Asserter.requireNotNull(source)));
         } catch (IOException exc) {
             LOGGER.error("Error when configuring LavaClient!", exc);
         }
     }
     public LavaClientBuilder() {
-        init(true, LavaClient.DEFAULT_CACHE_EXPIRE_WRITE, LavaClient.DEFAULT_CACHE_EXPIRE_ACCESS);
+        init(LavaClient.DEFAULT_CACHE_EXPIRE_WRITE, LavaClient.DEFAULT_CACHE_EXPIRE_ACCESS);
         this.entries = new ObjectArrayList<>();
         this.password = LavaClient.PASSWORD_DEFAULT;
         this.restPort = LavaClient.REST_PORT_DEFAULT;
@@ -133,18 +136,16 @@ public class LavaClientBuilder {
     public LavaClient build() {
         return new LavaClientImpl(password, restPort, wsPort, shards, expireWriteMs, expireAccessMs, userId, entries);
     }
-    private void init(boolean overrideJson, @Nonnegative long expireWriteMs, @Nonnegative long expireAccessMs) {
-        if (overrideJson) {
-            JsonIterator.setMode(DecodingMode.DYNAMIC_MODE_AND_MATCH_FIELD_WITH_HASH);
-            JsonStream.setMode(EncodingMode.DYNAMIC_MODE);
-        }
+    private void init(@Nonnegative long expireWriteMs, @Nonnegative long expireAccessMs) {
+        JsonIterator.setMode(DecodingMode.DYNAMIC_MODE_AND_MATCH_FIELD_WITH_HASH);
+        JsonStream.setMode(EncodingMode.DYNAMIC_MODE);
         this.expireWriteMs = Asserter.requireNotNegative(expireWriteMs);
         this.expireAccessMs = Asserter.requireNotNegative(expireAccessMs);
     }
     private void init(JsonNode node) {
         JsonNode init_data = node.get("init");
         if (init_data != null && !init_data.isNull())
-            init(getBooleanOrElse(init_data, "overrideJson", true), getLongOrElse(init_data, "expireWriteMs", LavaClient.DEFAULT_CACHE_EXPIRE_WRITE),
+            init(getLongOrElse(init_data, "expireWriteMs", LavaClient.DEFAULT_CACHE_EXPIRE_WRITE),
                     getLongOrElse(init_data, "expireAccessMs", LavaClient.DEFAULT_CACHE_EXPIRE_ACCESS));
 
         JsonNode global_data = node.get("global");
