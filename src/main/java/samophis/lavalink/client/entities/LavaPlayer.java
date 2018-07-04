@@ -232,10 +232,10 @@ public interface LavaPlayer {
 
     /**
      * Sets the node to connect and send data to.
-     * @throws NullPointerException If the {@link AudioNode node} provided is {@code null}.
+     * <br><p>This player will attempt to disconnect from its currently-connected node if the specified node is {@code null}.</p>
      * @param node the <b>non-null</b> {@link AudioNode AudioNode} to connect and send data to.
      */
-    void setNode(@Nonnull AudioNode node);
+    void setNode(@Nullable AudioNode node);
 
     /**
      * Emits an {@link PlayerEvent event} to all {@link AudioEventListener listeners} attached to the player.
