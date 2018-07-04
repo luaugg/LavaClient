@@ -27,10 +27,14 @@ import javax.annotation.Nullable;
  * Unlike the JDA Client, LavaClient will keep trying to reconnect to nodes unless the server closes the connection with close-code 1000, or until the client
  * manually closes the connection.
  *
+ * <br>When trying to open a new WebSocket connection to the node, initially LavaClient won't throw exceptions (it'll just log),
+ * however when trying to connect through {@link #openConnection()}, there's a chance exceptions can be thrown.</p>
+ *
  * @since 0.1
  * @author SamOphis
  */
 
+@SuppressWarnings("unused")
 public interface AudioNode {
     /**
      * Returns the <b>not-null</b> {@link LavaClient LavaClient} associated with this node object.
@@ -40,11 +44,12 @@ public interface AudioNode {
     LavaClient getClient();
 
     /**
-     * Returns the raw, <b>not-null</b>, third-party WebSocket connection to the node.
-     * <br><p>It's advised that you seriously don't mess with this unless you know <b>exactly</b> what you are doing!</p>
-     * @return The <b>not-null</b> WebSocket connection.
+     * Returns the raw, <b>possibly-null</b>, third-party WebSocket connection to the node.
+     * <br><p>It's advised that you seriously don't mess with this unless you know <b>exactly</b> what you are doing!
+     * <br><b>Note: As of v2.5.0, this object can be {@code null} if LavaClient fails to connect to the node.</b></p>
+     * @return The <b>possibly-null</b> WebSocket connection.
      */
-    @Nonnull
+    @Nullable
     WebSocket getSocket();
 
     /**
@@ -81,4 +86,19 @@ public interface AudioNode {
      * @return Whether or not this node is running Lavalink v3.
      */
     boolean isUsingLavalinkVersionThree();
+
+    /**
+     * Attempts to open a connection to the matching Lavalink Node.
+     * <br><p>This can be used to reconnect (open a new WebSocket connection), usually in the case of disconnection or if LavaClient failed to connect normally.</p>
+     * @throws IllegalStateException If a connection to the node is already open and available to use.
+     * @throws samophis.lavalink.client.exceptions.SocketConnectionException If LavaClient failed to open a connection to this node.
+     */
+    void openConnection();
+
+    /**
+     * Attempts to close a current connection to the matching Lavalink Node.
+     * <br><p>This can be used to completely disconnect LavaClient from a node (and by extension, all {@link LavaPlayer LavaPlayers}).</p>
+     * @throws IllegalStateException If the connection to the node is {@code null} or already closed/unavailable.
+     */
+    void closeConnection();
 }

@@ -270,9 +270,8 @@ public abstract class LavaClient {
 
     /**
      * Fetches the {@link AudioNode AudioNode} with the least amount of load on it, used to balance the load of {@link LavaPlayer LavaPlayers} on different nodes.
-     * @return The best {@link AudioNode AudioNode} to connect to.
-     * @throws IllegalStateException If no Lavalink node exists or is available.
+     * @return The best {@link AudioNode AudioNode} to connect to, returns {@code null} if no node exists or is available.
      */
-    @Nonnull
+    @Nullable
     public abstract AudioNode getBestNode();
 }

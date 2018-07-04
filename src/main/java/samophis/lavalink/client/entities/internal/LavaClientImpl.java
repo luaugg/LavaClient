@@ -202,7 +202,7 @@ public class LavaClientImpl extends LavaClient {
         nodes.values().forEach(this::removeNode);
         manager.shutdown();
     }
-    @Nonnull
+    @Nullable
     @Override
     public AudioNode getBestNode() {
         AudioNode node = null;
@@ -214,10 +214,6 @@ public class LavaClientImpl extends LavaClient {
                 record = penalty;
             }
         }
-        if (node == null)
-            throw new IllegalStateException("No available Lavalink nodes!");
-        if (!node.isAvailable())
-            throw new IllegalStateException("Lavalink node wasn't available!");
-        return node;
+        return (node == null || !node.isAvailable()) ? null : node;
     }
 }

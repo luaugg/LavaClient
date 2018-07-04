@@ -31,6 +31,7 @@ import samophis.lavalink.client.entities.events.TrackExceptionEvent;
 import samophis.lavalink.client.entities.events.TrackStuckEvent;
 import samophis.lavalink.client.entities.messages.server.PlayerUpdate;
 import samophis.lavalink.client.entities.messages.server.Stats;
+import samophis.lavalink.client.exceptions.SocketConnectionException;
 import samophis.lavalink.client.util.Asserter;
 import samophis.lavalink.client.util.LavaClientUtil;
 
@@ -47,7 +48,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
     private final LoadBalancer balancer;
     private final AudioNodeEntryImpl entry;
     private WebSocket socket;
-    private Statistics statistics;
+    private volatile Statistics statistics;
     private AtomicInteger reconnectInterval, reconnectAttempts;
     private volatile boolean usingVersionThree;
     @SuppressWarnings("WeakerAccess")
@@ -61,20 +62,22 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         this.reconnectAttempts = new AtomicInteger(0);
         this.usingVersionThree = false;
         try {
-            WebSocket socket = new WebSocketFactory().createSocket(entry.getWebSocketAddress() + ":" + entry.getWebSocketPort());
-            SocketInitializer init = entry.getSocketInitializer();
-            if (init != null)
-                socket = Asserter.requireNotNull(init.initialize(socket));
-            this.socket = socket.addListener(this)
-                    .addHeader("Authorization", entry.getPassword())
-                    .addHeader("Num-Shards", String.valueOf(client.getShardCount()))
-                    .addHeader("User-Id", String.valueOf(client.getUserId()))
-                    .connectAsynchronously();
+            initSocket();
         } catch (IOException exc) {
-            LOGGER.error("Unrecoverable Exception when creating WebSocket! {}", exc.getMessage());
-            throw new RuntimeException(exc);
+            LOGGER.error("Exception when creating WebSocket! {} | Possible solution: Try connecting again with #openConnection!", exc.getMessage());
         }
         init();
+    }
+    private void initSocket() throws IOException {
+        WebSocket socket = new WebSocketFactory().createSocket(entry.getWebSocketAddress() + ":" + entry.getWebSocketPort());
+        SocketInitializer init = entry.getSocketInitializer();
+        if (init != null)
+            socket = Asserter.requireNotNull(init.initialize(socket));
+        this.socket = socket.addListener(this)
+                .addHeader("Authorization", entry.getPassword())
+                .addHeader("Num-Shards", String.valueOf(client.getShardCount()))
+                .addHeader("User-Id", String.valueOf(client.getUserId()))
+                .connectAsynchronously();
     }
     private void init() {
         Map<String, SocketHandler> handlers = entry.getInternalHandlerMap();
@@ -165,7 +168,11 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
             LOGGER.info("Connected after {} Reconnect Attempt(s)!", reconnectAttempts.get());
         List<String> found = headers.get("Lavalink-Major-Version");
         this.usingVersionThree = (found != null && found.get(0).equals("3"));
-        client.getPlayers().forEach(player -> player.setNode(client.getBestNode()));
+        client.getPlayers().forEach(player -> {
+            AudioNode node = client.getBestNode();
+            if (node != null)
+                player.setNode(node);
+        });
         reconnectInterval.set(1000);
         reconnectAttempts.set(0);
     }
@@ -225,12 +232,37 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         return socket.isOpen();
     }
     @Override
-    @Nonnull
+    @Nullable
     public WebSocket getSocket() {
         return socket;
     }
     @Override
     public boolean isUsingLavalinkVersionThree() {
         return usingVersionThree;
+    }
+    @Override
+    public void openConnection() {
+        if (socket != null && socket.isOpen()) {
+            LOGGER.error("Attempt to open a connection to a node using the URI: {} when one already exists!", socket.getURI().toString());
+            throw new IllegalStateException("Socket == OPEN");
+        }
+        try {
+            initSocket();
+        } catch (IOException exc) {
+            LOGGER.error("Attempt to open a connection to a node using the URI: {} failed! Message: {}", socket.getURI().toString(), exc.getMessage());
+            throw new SocketConnectionException(exc);
+        }
+    }
+    @Override
+    public void closeConnection() {
+        if (socket == null) {
+            LOGGER.error("Attempt to close a non-existent WebSocket on the node: {}", socket.getURI().toString());
+            throw new IllegalStateException("Socket == NULL");
+        }
+        if (!socket.isOpen()) {
+            LOGGER.error("Attempt to close the connection to a node using the URI: {} when it's already closed.", socket.getURI().toString());
+            throw new IllegalStateException("Socket == CLOSED");
+        }
+        socket.disconnect(1000);
     }
 }
