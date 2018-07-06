@@ -258,6 +258,7 @@ public abstract class LavaClient {
      * @return A <b>possibly-null</b> {@link LavaPlayer LavaPlayer} instance.
      * @throws IllegalArgumentException If the provided Guild ID was negative.
      */
+    @SuppressWarnings("UnusedReturnValue")
     public abstract LavaPlayer removePlayer(@Nonnegative long guild_id);
 
     /**
@@ -270,7 +271,7 @@ public abstract class LavaClient {
 
     /**
      * Fetches the {@link AudioNode AudioNode} with the least amount of load on it, used to balance the load of {@link LavaPlayer LavaPlayers} on different nodes.
-     * @return The best {@link AudioNode AudioNode} to connect to, returns {@code null} if no node exists or is available.
+     * @return The best {@link AudioNode AudioNode} to connect to, returns {@code null} if no node exists.
      */
     @Nullable
     public abstract AudioNode getBestNode();

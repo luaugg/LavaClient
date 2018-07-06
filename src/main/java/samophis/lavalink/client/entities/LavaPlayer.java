@@ -40,7 +40,7 @@ public interface LavaPlayer {
      * Fetches the {@link AudioNode AudioNode} this player will attempt to send data to.
      * @return The {@link AudioNode AudioNode} this player will attempt to send all data to.
      */
-    @Nonnull
+    @Nullable
     AudioNode getConnectedNode();
 
     /**
@@ -217,16 +217,19 @@ public interface LavaPlayer {
 
     /**
      * Skips to a certain position in a track.
+     * <br><p>This method will return early if the provided position was larger than the duration of the track.</p>
      * @param position The position, in milliseconds, to skip to.
      * @throws IllegalStateException If the player isn't currently connected to a {@link AudioNode AudioNode}.
+     * @throws IllegalArgumentException If the provided position was negative.
      */
     void seek(@Nonnegative long position);
 
     /**
      * Sets the volume of playback.
-     * <br><p>Note: If the provided volume is negative or over 150, this method will return early instead of sending a volume update.</p>
+     * <br><p>Note: If the provided volume is over 150, this method will return early instead of sending a volume update.</p>
      * @param volume The volume to set playback to, automatically bounded from 0 to 150 inclusive.
      * @throws IllegalStateException If the player isn't currently connected to a {@link AudioNode AudioNode}.
+     * @throws IllegalArgumentException If the provided volume was negative.
      */
     void setVolume(@Nonnegative int volume);
 
@@ -234,8 +237,9 @@ public interface LavaPlayer {
      * Sets the node to connect and send data to.
      * <br><p>This player will attempt to disconnect from its currently-connected node if the specified node is {@code null}.</p>
      * @param node the <b>non-null</b> {@link AudioNode AudioNode} to connect and send data to.
+     * @throws NullPointerException If the provided {@link AudioNode AudioNode} was {@code null}.
      */
-    void setNode(@Nullable AudioNode node);
+    void setNode(@Nonnull AudioNode node);
 
     /**
      * Emits an {@link PlayerEvent event} to all {@link AudioEventListener listeners} attached to the player.

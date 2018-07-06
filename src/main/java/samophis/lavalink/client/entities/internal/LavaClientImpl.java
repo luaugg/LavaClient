@@ -214,6 +214,6 @@ public class LavaClientImpl extends LavaClient {
                 record = penalty;
             }
         }
-        return (node == null || !node.isAvailable()) ? null : node;
+        return node;
     }
 }

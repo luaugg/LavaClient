@@ -77,6 +77,10 @@ public class LavaHttpManagerImpl implements LavaHttpManager {
             throw new HttpRequestException(exc);
         }
         AudioNode node = client.getBestNode();
+        if (node == null || !node.isAvailable()) {
+            LOGGER.error("No nodes are available or could be found!");
+            throw new IllegalStateException("No available nodes!");
+        }
         AudioNodeEntry entry = node.getEntry();
         HttpGet request = new HttpGet(entry.getHttpAddress() + ":" + entry.getRestPort() + "/loadtracks?identifier=" + identifier);
         request.addHeader("Authorization", entry.getPassword());

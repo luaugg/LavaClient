@@ -107,7 +107,7 @@ public class LavaPlayerImpl implements LavaPlayer {
         return paused;
     }
     @Override
-    @Nonnull
+    @Nullable
     public AudioNode getConnectedNode() {
         return node;
     }
@@ -132,12 +132,16 @@ public class LavaPlayerImpl implements LavaPlayer {
             LOGGER.warn("Attempted to set paused to {} for Guild ID: {} while in the {} state!", paused, guild_id, state.name());
             throw new IllegalStateException("State != CONNECTED");
         }
-        if (this.paused == paused)
-            return;
-        if (node.getSocket() == null) {
-            LOGGER.warn("Socket is null!");
+        if (node == null || node.getSocket() == null) {
+            LOGGER.warn("Node/Socket is null!");
             throw new IllegalStateException("Socket == NULL");
         }
+        if (!node.isAvailable()) {
+            LOGGER.warn("WebSocket Connection isn't open/available!");
+            throw new IllegalStateException("WebSocket Connection isn't open/available!");
+        }
+        if (this.paused == paused)
+            return;
         this.paused = paused;
         node.getSocket().sendText(JsonStream.serialize(new SetPausePlayback(guild_id, paused)));
         PlayerEvent event = paused ? new PlayerPauseEvent(this) : new PlayerResumeEvent(this);
@@ -150,12 +154,16 @@ public class LavaPlayerImpl implements LavaPlayer {
             LOGGER.warn("Attempted to set volume to {} for Guild ID: {} while in the {} state!", volume, guild_id, state.name());
             throw new IllegalStateException("State != CONNECTED");
         }
-        if (Asserter.requireNotNegative(volume) > 150)
-            return;
-        if (node.getSocket() == null) {
-            LOGGER.warn("Socket is null!");
+        if (node == null || node.getSocket() == null) {
+            LOGGER.warn("Node/Socket is null!");
             throw new IllegalStateException("Socket == NULL");
         }
+        if (!node.isAvailable()) {
+            LOGGER.warn("WebSocket Connection isn't open/available!");
+            throw new IllegalStateException("WebSocket Connection isn't open/available!");
+        }
+        if (Asserter.requireNotNegative(volume) > 150)
+            return;
         node.getSocket().sendText(JsonStream.serialize(new SetVolume(guild_id, volume)));
         this.volume = volume;
     }
@@ -176,7 +184,11 @@ public class LavaPlayerImpl implements LavaPlayer {
         }
         this.track = Asserter.requireNotNull(track);
         Asserter.requireNotNegative(startTime);
-        setNode(client.getBestNode());
+        AudioNode node = client.getBestNode();
+        if (node == null || !node.isAvailable()) {
+            LOGGER.warn("No available nodes for Player on Guild ID: {}", guild_id);
+            throw new IllegalStateException("No available nodes!");
+        }
         TrackDataPair cached = client.getIdentifierCache().get(track.getIdentifier(), ignored -> new TrackDataPairImpl(track));
         if (cached == null)
             cached = new TrackDataPairImpl(track);
@@ -189,9 +201,12 @@ public class LavaPlayerImpl implements LavaPlayer {
             LOGGER.warn("Attempt to play track for Guild ID: {} while in the {} state!", guild_id, state.name());
             throw new IllegalStateException("State != CONNECTED");
         }
+        if (node == null || node.getSocket() == null) {
+            LOGGER.warn("Node/Socket is null!");
+            throw new IllegalStateException("Socket == NULL");
+        }
         Asserter.requireNotNegative(startTime);
         TrackDataPair pair = client.getIdentifierCache().getIfPresent(identifier);
-        setNode(client.getBestNode());
         if (pair == null) {
             client.getHttpManager().resolveTracks(identifier, wrapper -> {
                 List<TrackDataPair> tracks = wrapper.getLoadedTracks();
@@ -256,35 +271,50 @@ public class LavaPlayerImpl implements LavaPlayer {
         client.getHttpManager().resolveTracks(identifier, callback);
     }
     @Override
-    @SuppressWarnings("all")
+    @SuppressWarnings("ConstantConditions")
     public void stopTrack() {
         if (this.state != State.CONNECTED) {
             LOGGER.warn("Attempt to stop track for Guild ID: {} while in the {} state!", guild_id, state.name());
             throw new IllegalStateException("State != CONNECTED");
         }
-        if (node.getSocket() == null) {
-            LOGGER.warn("Socket is null!");
+        if (node == null || node.getSocket() == null) {
+            LOGGER.warn("Node/Socket is null!");
             throw new IllegalStateException("Socket == NULL");
+        }
+        if (!node.isAvailable()) {
+            LOGGER.warn("WebSocket Connection isn't open/available!");
+            throw new IllegalStateException("WebSocket Connection isn't open/available!");
         }
         node.getSocket().sendText(JsonStream.serialize(new StopPlayback(guild_id)));
     }
     @Override
-    @SuppressWarnings("all")
     public void destroyPlayer() {
+        destroyPlayer0(false);
+    }
+    @SuppressWarnings("ConstantConditions")
+    private void destroyPlayer0(boolean setNotConnected) {
         if (this.state != State.CONNECTED) {
             LOGGER.warn("Attempt to destroy player for Guild ID: {} while in the {} state!", guild_id, state.name());
             throw new IllegalStateException("State != CONNECTED");
         }
-        if (node.getSocket() == null) {
-            LOGGER.warn("Socket is null!");
+        if (node == null || node.getSocket() == null) {
+            LOGGER.warn("Node/Socket is null!");
             throw new IllegalStateException("Socket == NULL");
         }
+        if (setNotConnected) {
+            if (!node.isAvailable())
+                return;
+        }
+        else if (!node.isAvailable()) {
+            LOGGER.warn("WebSocket Connection isn't open/available!");
+            throw new IllegalStateException("WebSocket Connection isn't open/available!");
+        }
         client.removePlayer(guild_id);
-        state = State.DESTROYED;
+        state = setNotConnected ? State.NOT_CONNECTED : State.DESTROYED;
         node.getSocket().sendText(JsonStream.serialize(new DestroyPlayer(guild_id)));
     }
     @Override
-    @SuppressWarnings("all")
+    @SuppressWarnings("ConstantConditions")
     public void seek(@Nonnegative long position) {
         if (this.state != State.CONNECTED) {
             LOGGER.warn("Attempt to seek track for Guild ID: {} while in the {} state!", guild_id, state.name());
@@ -292,9 +322,13 @@ public class LavaPlayerImpl implements LavaPlayer {
         }
         if (Asserter.requireNotNegative(position) > Asserter.requireNotNull(track).getDuration())
             return;
-        if (node.getSocket() == null) {
-            LOGGER.warn("Socket is null!");
+        if (node == null || node.getSocket() == null) {
+            LOGGER.warn("Node/Socket is null!");
             throw new IllegalStateException("Socket == NULL");
+        }
+        if (!node.isAvailable()) {
+            LOGGER.warn("WebSocket Connection isn't open/available!");
+            throw new IllegalStateException("WebSocket Connection isn't open/available!");
         }
         node.getSocket().sendText(JsonStream.serialize(new SeekTrack(guild_id, position)));
         this.position = position;
@@ -323,32 +357,38 @@ public class LavaPlayerImpl implements LavaPlayer {
         throw new IllegalArgumentException("Parameter event does not have a listener method in the AudioEventListener interface!");
     }
     @Override
-    public void setNode(@Nullable AudioNode node) {
-        if (node == null && this.node != null)
-            destroyPlayer();
+    public void setNode(@Nonnull AudioNode node) {
+        Asserter.requireNotNull(node);
+        if (this.node != null && !this.node.equals(node))
+            destroyPlayer0(true);
+        if (!node.isAvailable())
+            this.state = State.NOT_CONNECTED;
         this.node = node;
     }
     @Override
-    @SuppressWarnings("all")
+    @SuppressWarnings("ConstantConditions")
     public void connect(@Nonnull String session_id, @Nonnull String token, @Nonnull String endpoint) {
         if (this.state == State.CONNECTED) {
             LOGGER.warn("Player (with Guild ID: {}) is already connected!", guild_id);
             throw new IllegalStateException("State == CONNECTED");
         }
-        if (node.getSocket() == null) {
-            LOGGER.warn("Socket is null!");
-            throw new IllegalStateException("Socket == NULL");
+        if (node == null || node.getSocket() == null) {
+            LOGGER.warn("Node/Socket is null!");
+            throw new IllegalStateException("Node/Socket == NULL");
+        }
+        if (!node.isAvailable()) {
+            LOGGER.warn("WebSocket Connection isn't open/available!");
+            throw new IllegalStateException("WebSocket Connection isn't open/available!");
         }
         VoiceUpdate update = new VoiceUpdate(guild_id, Asserter.requireNotNull(session_id), Asserter.requireNotNull(token), Asserter.requireNotNull(endpoint));
         node.getSocket().sendText(JsonStream.serialize(update));
         this.state = State.CONNECTED;
     }
-
+    @SuppressWarnings("UnusedReturnValue")
     public LavaPlayerImpl setPosition(long position) {
         this.position = position;
         return this;
     }
-    @SuppressWarnings("all")
     public LavaPlayerImpl setTimestamp(long timestamp) {
         this.timestamp = timestamp;
         return this;
@@ -362,22 +402,19 @@ public class LavaPlayerImpl implements LavaPlayer {
         this.channel_id = channel_id;
         return this;
     }
-    @SuppressWarnings("all")
+    @SuppressWarnings("unused")
     public LavaPlayerImpl setState(State state) {
         this.state = state;
         return this;
     }
-    @SuppressWarnings("all")
+    @SuppressWarnings("ConstantConditions")
     private void handleTrackPair(TrackDataPair pair, long start, long end) {
-        if (node.getSocket() == null) {
-            LOGGER.warn("Socket is null!");
-            throw new IllegalStateException("Socket == NULL");
-        }
         String data = JsonStream.serialize(new PlayTrack(guild_id, start, end, pair.getTrackData()));
         TrackStartEvent event = new TrackStartEvent(this, pair.getTrack());
         track = event.getTrack();
-        setNode(client.getBestNode());
-        node.getSocket().sendText(data);
-        emitEvent(event);
+        if (node != null && node.isAvailable()) {
+            node.getSocket().sendText(data);
+            emitEvent(event);
+        }
     }
 }

@@ -4,12 +4,12 @@ plugins {
     id 'com.jfrog.bintray' version '1.8.3'
     id 'idea'
     id 'com.github.johnrengelman.shadow' version '2.0.4'
-    id "com.github.ben-manes.versions" version "0.20.0"
+    id "com.github.ben-manes.versions" version '0.20.0'
 }
 
 group 'com.github.samophis'
 description 'Fast client implementation for Lavalink.'
-version '2.5.0'
+version '2.6.0'
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
@@ -48,7 +48,7 @@ bintray {
         name = 'LavaClient'
         licenses = ['Apache-2.0']
         vcsUrl = ['https://github.com/SamOphis/LavaClient.git']
-        publish = true
+        publish = false
         version {
             name = project.version
             released = new Date()
@@ -130,7 +130,7 @@ ext {
     javassistVersion = '3.12.1.GA'
     httpAsyncClientVersion = '4.1.3'
     fastutilVersion = '8.2.1'
-    sentryLogbackVersion = '1.7.5'
+    slf4jApiVersion = '1.7.25'
     findbugsSourcesVersion = '3.0.2'
     lavaplayerSourcesVersion = '1.3.6'
     caffeineVersion = '2.6.2'
@@ -145,10 +145,10 @@ dependencies {
     compile group: 'javassist', name: 'javassist', version: javassistVersion
     compile group: 'org.apache.httpcomponents', name: 'httpasyncclient', version: httpAsyncClientVersion
     compile group: 'it.unimi.dsi', name: 'fastutil', version: fastutilVersion
-    compile group: 'io.sentry', name: 'sentry-logback', version: sentryLogbackVersion
+    compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jApiVersion
+    compile group: 'com.github.ben-manes.caffeine', name: 'caffeine', version: caffeineVersion
     compileOnly group: 'com.google.code.findbugs', name: 'jsr305', version: findbugsSourcesVersion
     compileOnly group: 'com.sedmelluq', name: 'lavaplayer', version: lavaplayerSourcesVersion
-    compile group: 'com.github.ben-manes.caffeine', name: 'caffeine', version: caffeineVersion
 }
 
 sourceCompatibility = 1.8
