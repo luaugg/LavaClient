@@ -48,7 +48,7 @@ bintray {
         name = 'LavaClient'
         licenses = ['Apache-2.0']
         vcsUrl = ['https://github.com/SamOphis/LavaClient.git']
-        publish = false
+        publish = true
         version {
             name = project.version
             released = new Date()
