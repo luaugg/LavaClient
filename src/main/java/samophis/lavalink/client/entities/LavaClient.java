@@ -26,6 +26,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Represents the LavaClient implementation of Lavalink, with default constants matching those of the Lavalink-Server, collections of nodes, players, etc.
@@ -38,15 +39,24 @@ import java.util.Map;
 @SuppressWarnings("unused")
 public abstract class LavaClient {
     /** The default port to use for the Lavalink-Server REST API. */
-    public static final int REST_PORT_DEFAULT = 2333;
+    public static final int DEFAULT_REST_PORT = 2333;
     /** The default port to use for the Lavalink-Server WebSocket. */
-    public static final int WS_PORT_DEFAULT = 80;
+    public static final int DEFAULT_WS_PORT = 80;
     /** The default password to use for the Lavalink-Server. */
-    public static final String PASSWORD_DEFAULT = "youshallnotpass";
+    public static final String DEFAULT_PASSWORD = "youshallnotpass";
     /** The default cache expire-after-write time, in milliseconds. */
     public static final long DEFAULT_CACHE_EXPIRE_WRITE = 1200000;
     /** The default cache expire-after-access time, in milliseconds. */
     public static final long DEFAULT_CACHE_EXPIRE_ACCESS = 900000;
+
+    /** The default reconnect "base" interval to use. */
+    public static final long DEFAULT_BASE_INTERVAL = 0;
+    /** The value the reconnect interval is capped to. */
+    public static final long DEFAULT_MAX_INTERVAL = 15;
+    /** The default TimeUnit to wait for the provided interval in. */
+    public static final TimeUnit DEFAULT_INTERVAL_UNIT = TimeUnit.SECONDS;
+    /** The default interval expander, equivalent to raising 2 to the amount of reconnect attempts. */
+    public static final ReconnectIntervalFunction DEFAULT_INTERVAL_EXPANDER = (node, old) -> (long) Math.pow(2, old);
 
     protected final Map<String, AudioNode> nodes;
     protected final Long2ObjectMap<LavaPlayer> players;
@@ -97,7 +107,7 @@ public abstract class LavaClient {
 
     /**
      * Fetches the default password for all {@link AudioNode AudioNodes} the client has access to.
-     * <br><p>This value equates to {@value PASSWORD_DEFAULT} if it's not specified during the construction of the LavaClient instance.</p>
+     * <br><p>This value equates to {@value DEFAULT_PASSWORD} if it's not specified during the construction of the LavaClient instance.</p>
      * @return The default password specified for this LavaClient instance.
      */
     @Nonnull
@@ -129,15 +139,51 @@ public abstract class LavaClient {
 
     /**
      * Fetches the default WebSocket port for all {@link AudioNode AudioNodes} the client has access to.
-     * <br><p>This value equates to {@value WS_PORT_DEFAULT} if it's not specified during the construction of the LavaClient instance.</p>
+     * <br><p>This value equates to {@value DEFAULT_WS_PORT} if it's not specified during the construction of the LavaClient instance.</p>
      * @return The default WebSocket port for this LavaClient instance.
      */
     @Nonnegative
     public abstract int getGlobalWebSocketPort();
 
     /**
+     * Fetches the default "base" interval for reconnecting purposes, used for default values and "expansion".
+     * <br><p>As with almost all default values, this value can be overridden on a per-node basis. This value equates
+     * to {@value DEFAULT_BASE_INTERVAL} if it's not specified during construction of this client.</p>
+     * @return The default "base" interval for reconnecting purposes.
+     */
+    public abstract long getGlobalBaseReconnectInterval();
+
+    /**
+     * Fetches the default maximum interval for reconnecting purposes, used to cap the provided reconnect interval
+     * so that it never gets too high.
+     * <br><p>As with almost all default values, this value can be overridden on a per-node basis. This value equates to
+     * {@value DEFAULT_MAX_INTERVAL} if it's not specified during construction of this client.</p>
+     * @return The <b>not-negative</b> maximum interval for reconnecting purposes.
+     */
+    @Nonnegative
+    public abstract long getGlobalMaximumReconnectInterval();
+
+    /**
+     * Fetches the default interval "expander", used to change the reconnect interval for the next reconnect attempt.
+     * <br><p>As of v3.0.0, this expander returns 2 raised to the number of reconnect attempts. As with almost all default
+     * values, this value can be overridden on a per-node basis.</p>
+     * @return The <b>not-null</b> {@link ReconnectIntervalFunction} used to change intervals.
+     */
+    @Nonnull
+    public abstract ReconnectIntervalFunction getGlobalIntervalExpander();
+
+    /**
+     * Fetches the default TimeUnit which is used to actually wait for the intervals in a good unit, such as MILLISECONDS, HOURS, etc.
+     * <br><p>As of v3.0.0, the returned unit is TimeUnit#SECONDS, however as with almost all default values, this value
+     * can be overridden on a per-node basis.</p>
+     * @return The default TimeUnit to wait in.
+     */
+    @Nonnull
+    public abstract TimeUnit getGlobalIntervalTimeUnit();
+
+    /**
      * Fetches the default REST API port for all {@link AudioNode AudioNodes} the client has access to.
-     * <br><p>This value equates to {@value REST_PORT_DEFAULT} if it's not specified during the construction of the LavaClient instance.</p>
+     * <br><p>This value equates to {@value DEFAULT_REST_PORT} if it's not specified during the construction of the LavaClient instance.</p>
      * @return The default REST API port for this LavaClient instance.
      */
     @Nonnegative
@@ -240,7 +286,7 @@ public abstract class LavaClient {
 
     /**
      * Attempts to remove a {@link LavaPlayer LavaPlayer} instance associated with a <b>positive</b> Guild ID.
-     * <br><p>If a player is found, it'll be removed and disconnected only if it's connected and if {@code shouldDestroy} is set to true.
+     * <br><p>If a player is found, it'll be destroyed only if it's connected and if {@code shouldDestroy} is set to true.
      * If it isn't found, nothing will happen and {@code null} will be returned.</p>
      * @param guild_id The <b>positive</b> Guild ID associated with the {@link LavaPlayer LavaPlayer} instance.
      * @param shouldDestroy If LavaClient should destroy the player before removing it.

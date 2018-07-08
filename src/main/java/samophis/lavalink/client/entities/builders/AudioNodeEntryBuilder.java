@@ -16,16 +16,15 @@
 
 package samophis.lavalink.client.entities.builders;
 
+import com.neovisionaries.ws.client.WebSocketFactory;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import samophis.lavalink.client.entities.AudioNodeEntry;
-import samophis.lavalink.client.entities.LavaClient;
-import samophis.lavalink.client.entities.SocketHandler;
-import samophis.lavalink.client.entities.SocketInitializer;
+import samophis.lavalink.client.entities.*;
 import samophis.lavalink.client.entities.internal.AudioNodeEntryImpl;
 import samophis.lavalink.client.util.Asserter;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("unused")
 public class AudioNodeEntryBuilder {
@@ -34,6 +33,10 @@ public class AudioNodeEntryBuilder {
     private String address, password;
     private int restPort, wsPort;
     private SocketInitializer initializer;
+    private WebSocketFactory factory;
+    private ReconnectIntervalFunction expander;
+    private TimeUnit unit;
+    private long baseInterval, maxInterval;
     @SuppressWarnings({"deprecation", "WeakerAccess"})
     public AudioNodeEntryBuilder(@Nonnull LavaClient client) {
         this.client = Asserter.requireNotNull(client);
@@ -59,11 +62,32 @@ public class AudioNodeEntryBuilder {
         this.initializer = initializer;
         return this;
     }
+    public AudioNodeEntryBuilder setWebSocketFactory(WebSocketFactory factory) {
+        this.factory = factory;
+        return this;
+    }
+    public AudioNodeEntryBuilder setReconnectIntervalExpander(ReconnectIntervalFunction expander) {
+        this.expander = expander;
+        return this;
+    }
+    public AudioNodeEntryBuilder setReconnectIntervalUnit(TimeUnit unit) {
+        this.unit = unit;
+        return this;
+    }
+    public AudioNodeEntryBuilder setReconnectBaseInterval(long baseInterval) {
+        this.baseInterval = baseInterval;
+        return this;
+    }
+    public AudioNodeEntryBuilder setReconnectMaximumInterval(long maxInterval) {
+        this.maxInterval = maxInterval;
+        return this;
+    }
     public AudioNodeEntryBuilder addSocketHandler(SocketHandler handler) {
         this.handlers.put(Asserter.requireNotNull(handler).getName(), handler);
         return this;
     }
     public AudioNodeEntry build() {
-        return new AudioNodeEntryImpl(client, address, password, restPort, wsPort, initializer, handlers);
+        return new AudioNodeEntryImpl(client, address, password, restPort, wsPort, factory, baseInterval,
+                expander, maxInterval, unit, initializer, handlers);
     }
 }

@@ -16,11 +16,14 @@
 
 package samophis.lavalink.client.entities;
 
+import com.neovisionaries.ws.client.WebSocketFactory;
+
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Represents an entry for an {@link AudioNode AudioNode} with configuration options.
@@ -92,6 +95,44 @@ public interface AudioNodeEntry {
      */
     @Nullable
     SocketInitializer getSocketInitializer();
+
+    /**
+     * Returns a user-specified (or default) WebSocketFactory used to create the sockets needed to connect to nodes.
+     * @return A <b>not-null</b> WebSocketFactory.
+     */
+    @Nonnull
+    WebSocketFactory getWebSocketFactory();
+
+    /**
+     * Returns a user-specified (or default) {@link ReconnectIntervalFunction ReconnectIntervalFunction} used to
+     * change the next interval for the next reconnect attempt.
+     * @return A <b>not-null</b> {@link ReconnectIntervalFunction ReconnectIntervalFunction}.
+     */
+    ReconnectIntervalFunction getIntervalExpander();
+
+    /**
+     * Returns a user-specified (or default) TimeUnit needed for LavaClient to know how long to wait for.
+     * @return A <b>not-null</b> TimeUnit.
+     */
+    @Nonnull
+    TimeUnit getIntervalTimeUnit();
+
+    /**
+     * Returns a user-specified (or default) "base" interval used for reconnection purposes.
+     * <br><p>This value is basically the default interval, and it's used to reset old intervals as well as during initialization.
+     * This value <b>CAN</b> be negative.</p>
+     * @return A <b>possibly-negative</b> base interval.
+     */
+    long getBaseReconnectInterval();
+
+    /**
+     * Returns a user-specified (or default) maximum interval used for reconnection purposes.
+     * <br><p>Users should not cap the values in their expanders themselves, but instead set the maximum value here.
+     * LavaClient will automatically cap the produced value so it doesn't exceed this number.</p>
+     * @return A <b>not-negative (positive)</b> maximum value that intervals cannot exceed.
+     */
+    @Nonnegative
+    long getMaximumReconnectInterval();
 
     /**
      * Fetches an unmodifiable view of the internal {@link SocketHandler SocketHandler} map.

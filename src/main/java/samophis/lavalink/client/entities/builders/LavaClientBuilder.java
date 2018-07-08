@@ -23,11 +23,13 @@ import com.jsoniter.JsonIterator;
 import com.jsoniter.output.EncodingMode;
 import com.jsoniter.output.JsonStream;
 import com.jsoniter.spi.DecodingMode;
+import com.neovisionaries.ws.client.WebSocketFactory;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import samophis.lavalink.client.entities.AudioNodeEntry;
 import samophis.lavalink.client.entities.LavaClient;
+import samophis.lavalink.client.entities.ReconnectIntervalFunction;
 import samophis.lavalink.client.entities.internal.AudioNodeEntryImpl;
 import samophis.lavalink.client.entities.internal.LavaClientImpl;
 import samophis.lavalink.client.exceptions.ConfigurationFormatException;
@@ -39,6 +41,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class LavaClientBuilder {
@@ -47,19 +50,15 @@ public class LavaClientBuilder {
     private final List<AudioNodeEntry> entries;
     private String password;
     private int restPort, wsPort, shards;
-    private long expireWriteMs, expireAccessMs, userId;
+    private long expireWriteMs, expireAccessMs, userId, maxInterval, baseInterval;
+    private TimeUnit unit;
+    private ReconnectIntervalFunction expander;
     @Deprecated
-    public LavaClientBuilder(boolean overrideJson, @Nonnegative long expireWriteMs, @Nonnegative long expireAccessMs) {
-        this();
-        init(expireWriteMs, expireAccessMs);
-    }
-    @Deprecated
-    public LavaClientBuilder(boolean overrideJson) {
-        this(overrideJson, LavaClient.DEFAULT_CACHE_EXPIRE_WRITE, LavaClient.DEFAULT_CACHE_EXPIRE_ACCESS);
-    }
     public LavaClientBuilder(@Nonnegative long expireWriteMs, @Nonnegative long expireAccessMs) {
         this();
-        init(expireWriteMs, expireAccessMs);
+        init();
+        this.expireWriteMs = expireWriteMs;
+        this.expireAccessMs = expireAccessMs;
     }
     public LavaClientBuilder(byte[] content) {
         this();
@@ -94,11 +93,11 @@ public class LavaClientBuilder {
         }
     }
     public LavaClientBuilder() {
-        init(LavaClient.DEFAULT_CACHE_EXPIRE_WRITE, LavaClient.DEFAULT_CACHE_EXPIRE_ACCESS);
+        init();
         this.entries = new ObjectArrayList<>();
-        this.password = LavaClient.PASSWORD_DEFAULT;
-        this.restPort = LavaClient.REST_PORT_DEFAULT;
-        this.wsPort = LavaClient.WS_PORT_DEFAULT;
+        this.password = LavaClient.DEFAULT_PASSWORD;
+        this.restPort = LavaClient.DEFAULT_REST_PORT;
+        this.wsPort = LavaClient.DEFAULT_WS_PORT;
     }
     public LavaClientBuilder addEntry(@Nonnull AudioNodeEntry entry) {
         entries.add(Asserter.requireNotNull(entry));
@@ -133,30 +132,52 @@ public class LavaClientBuilder {
         this.userId = userId;
         return this;
     }
-    public LavaClient build() {
-        return new LavaClientImpl(password, restPort, wsPort, shards, expireWriteMs, expireAccessMs, userId, entries);
+    public LavaClientBuilder setReconnectIntervalUnit(TimeUnit unit) {
+        this.unit = unit;
+        return this;
     }
-    private void init(@Nonnegative long expireWriteMs, @Nonnegative long expireAccessMs) {
+    public LavaClientBuilder setReconnectIntervalExpander(ReconnectIntervalFunction expander) {
+        this.expander = expander;
+        return this;
+    }
+    public LavaClientBuilder setCacheExpireAccessMs(long expireAccessMs) {
+        this.expireAccessMs = expireAccessMs;
+        return this;
+    }
+    public LavaClientBuilder setCacheExpireWriteMs(long expireWriteMs) {
+        this.expireWriteMs = expireWriteMs;
+        return this;
+    }
+    public LavaClientBuilder setReconnectBaseInterval(long baseInterval) {
+        this.baseInterval = baseInterval;
+        return this;
+    }
+    public LavaClientBuilder setReconnectMaximumInterval(long maxInterval) {
+        this.maxInterval = maxInterval;
+        return this;
+    }
+    public LavaClient build() {
+        return new LavaClientImpl(password, restPort, wsPort, shards, expireWriteMs, expireAccessMs, userId,
+                baseInterval, maxInterval, expander, unit, entries);
+    }
+    private void init() {
         JsonIterator.setMode(DecodingMode.DYNAMIC_MODE_AND_MATCH_FIELD_WITH_HASH);
         JsonStream.setMode(EncodingMode.DYNAMIC_MODE);
-        this.expireWriteMs = Asserter.requireNotNegative(expireWriteMs);
-        this.expireAccessMs = Asserter.requireNotNegative(expireAccessMs);
     }
     private void init(JsonNode node) {
-        JsonNode init_data = node.get("init");
-        if (init_data != null && !init_data.isNull())
-            init(getLongOrElse(init_data, "expireWriteMs", LavaClient.DEFAULT_CACHE_EXPIRE_WRITE),
-                    getLongOrElse(init_data, "expireAccessMs", LavaClient.DEFAULT_CACHE_EXPIRE_ACCESS));
-
+        init();
         JsonNode global_data = node.get("global");
         if (global_data != null && !global_data.isNull()) {
-            restPort = getIntOrElse(global_data, "restPort", LavaClient.REST_PORT_DEFAULT);
-            wsPort = getIntOrElse(global_data, "wsPort", LavaClient.WS_PORT_DEFAULT);
+            expireWriteMs = getLongOrElse(global_data, "expireWriteMs", LavaClient.DEFAULT_CACHE_EXPIRE_WRITE);
+            expireAccessMs = getLongOrElse(global_data, "expireAccessMs", LavaClient.DEFAULT_CACHE_EXPIRE_ACCESS);
+            restPort = getIntOrElse(global_data, "restPort", LavaClient.DEFAULT_REST_PORT);
+            wsPort = getIntOrElse(global_data, "wsPort", LavaClient.DEFAULT_WS_PORT);
             shards = getOrThrowAndLog(global_data, "shardCount").intValue();
             userId = getOrThrowAndLog(global_data, "userId").longValue();
-            password = getStringOrElse(global_data, "password", LavaClient.PASSWORD_DEFAULT);
+            password = getStringOrElse(global_data, "password", LavaClient.DEFAULT_PASSWORD);
+            baseInterval = getLongOrElse(global_data, "baseInterval", LavaClient.DEFAULT_BASE_INTERVAL);
+            maxInterval = getLongOrElse(global_data, "maxInterval", LavaClient.DEFAULT_MAX_INTERVAL);
         }
-
         JsonNode nodes = node.get("nodes");
         if (nodes != null && nodes.isObject()) {
             for (JsonNode next : nodes) {
@@ -164,11 +185,18 @@ public class LavaClientBuilder {
                 String password = getStringOrElse(next, "password", this.password);
                 int restPort = getIntOrElse(next, "restPort", this.restPort);
                 int wsPort = getIntOrElse(next, "wsPort", this.wsPort);
+                long baseInterval = getLongOrElse(next, "baseInterval", this.baseInterval);
+                long maxInterval = getLongOrElse(next, "maxInterval", this.maxInterval);
                 AudioNodeEntry entry = new AudioNodeEntryImpl()
                         .setAddress(address)
                         .setPassword(password)
                         .setRest(Asserter.requireNotNegative(restPort))
-                        .setWs(Asserter.requireNotNegative(wsPort));
+                        .setWs(Asserter.requireNotNegative(wsPort))
+                        .setBaseInterval(baseInterval)
+                        .setMaxInterval(Asserter.requireNotNegative(maxInterval))
+                        .setUnit(unit)
+                        .setExpander(expander)
+                        .setFactory(new WebSocketFactory());
                 entries.add(entry);
             }
         }

@@ -1,6 +1,7 @@
 # LavaClient
 [![Build Status](https://travis-ci.org/SamOphis/LavaClient.svg?branch=master)](https://travis-ci.org/SamOphis/LavaClient)
 [![Download](https://api.bintray.com/packages/samophis/maven/LavaClient/images/download.svg) ](https://bintray.com/samophis/maven/LavaClient/_latestVersion) 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 [![LavaClient Guild](https://discordapp.com/api/guilds/455002103757406218/embed.png?style=banner2)](https://discord.gg/dvUhTJX)
 
@@ -24,14 +25,19 @@ class and support for every documented [Lavalink Feature from v2.0 onwards.](htt
 Additionally, it:
 
 * Uses faster and lighter dependencies.
-* Uses Sentry Logback Logging frequently allowing for super simple error/warning management.
+* Uses SLF4J Logging frequently allowing for super simple error/warning management.
+* Offers full documentation of any public class meant to be used.
 * Uses the same load balancing logic found in the [Lavalink JDA Client](https://github.com/Frederikam/Lavalink/tree/master/LavalinkClient).
 * Has self-explanatory and easy-to-use features.
 * Has a **configurable** cache to reduce load on both nodes and clients.
 * Has neat features such as `SocketInitializer`s and `AudioWrapper`s to allow low-level socket configuration as well as complete compatibility between
   Lavalink v2.0 and v3.0, meaning you don't have to change one bit of code even when using mixtures of nodes running v2.0 or v3.0 of Lavalink.
+  Users can also specify a custom `WebSocketFactory` for even deeper configuration.
 * Has easy-to-understand [guides found in the Wiki.](https://github.com/SamOphis/LavaClient/wiki)
-* Has more minor features not listed here.
+* Very fault tolerant (as of v3.0.0): LavaClient will automatically reconnect to nodes where possible, and has an almost entirely configurable
+  backoff/interval system. This allows for the rebooting of nodes and accounts for sudden disconnections without your application exploding.
+* Supports reconnecting and disconnecting from nodes manually with safe, optional callbacks.
+* Has "placeholder" values meaning you only have to configure what you specifically need.
 
 However, there is one big con of LavaClient which is how abstract it is. LavaClient doesn't rely on [JDA](https://github.com/DV8FromTheWorld/JDA),
 [Discord4J](https://github.com/austinv11/Discord4J) or any other Discord API Library, and so things such as rate limiting or the handling of events

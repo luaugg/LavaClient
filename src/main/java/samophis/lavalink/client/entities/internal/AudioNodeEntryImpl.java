@@ -16,13 +16,11 @@
 
 package samophis.lavalink.client.entities.internal;
 
+import com.neovisionaries.ws.client.WebSocketFactory;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
-import samophis.lavalink.client.entities.AudioNodeEntry;
-import samophis.lavalink.client.entities.LavaClient;
-import samophis.lavalink.client.entities.SocketHandler;
-import samophis.lavalink.client.entities.SocketInitializer;
+import samophis.lavalink.client.entities.*;
 import samophis.lavalink.client.util.Asserter;
 
 import javax.annotation.Nonnegative;
@@ -31,6 +29,7 @@ import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 public class AudioNodeEntryImpl implements AudioNodeEntry {
@@ -40,10 +39,15 @@ public class AudioNodeEntryImpl implements AudioNodeEntry {
     private String address, password, httpAddress, wsAddress;
     private int rest, ws;
     private final boolean fileBased;
+    private WebSocketFactory factory;
     private SocketInitializer initializer;
     private Map<String, SocketHandler> handlers;
+    private long baseInterval, maxInterval;
+    private ReconnectIntervalFunction expander;
+    private TimeUnit unit;
     public AudioNodeEntryImpl(LavaClient client, String address, String password, int rest, int ws,
-                              SocketInitializer initializer, Map<String, SocketHandler> handlers) {
+                              WebSocketFactory factory, long baseInterval, ReconnectIntervalFunction expander, long maxInterval,
+                              TimeUnit unit, SocketInitializer initializer, Map<String, SocketHandler> handlers) {
         this.client = Asserter.requireNotNull(client);
         this.address = Asserter.requireNotNull(address);
         this.httpAddress = !HTTP_PATTERN.matcher(address).find() ? "http://" + address : address;
@@ -53,6 +57,11 @@ public class AudioNodeEntryImpl implements AudioNodeEntry {
         this.ws = ws == 0 ? client.getGlobalWebSocketPort() : ws;
         this.initializer = initializer;
         this.handlers = Asserter.requireNotNull(handlers);
+        this.factory = factory == null ? new WebSocketFactory() : factory;
+        this.baseInterval = baseInterval;
+        this.maxInterval = maxInterval < 0 ? client.getGlobalMaximumReconnectInterval() : maxInterval;
+        this.expander = expander == null ? client.getGlobalIntervalExpander() : expander;
+        this.unit = unit == null ? client.getGlobalIntervalTimeUnit() : unit;
         this.fileBased = false;
     }
     public AudioNodeEntryImpl() {
@@ -92,6 +101,30 @@ public class AudioNodeEntryImpl implements AudioNodeEntry {
     @Nonnegative
     public int getWebSocketPort() {
         return ws;
+    }
+    @Nonnull
+    @Override
+    public WebSocketFactory getWebSocketFactory() {
+        return factory;
+    }
+    @Override
+    public long getBaseReconnectInterval() {
+        return baseInterval;
+    }
+    @Override
+    @Nonnegative
+    public long getMaximumReconnectInterval() {
+        return maxInterval;
+    }
+    @Override
+    @Nonnull
+    public ReconnectIntervalFunction getIntervalExpander() {
+        return expander;
+    }
+    @Override
+    @Nonnull
+    public TimeUnit getIntervalTimeUnit() {
+        return unit;
     }
     @Nullable
     @Override
@@ -138,10 +171,27 @@ public class AudioNodeEntryImpl implements AudioNodeEntry {
         this.ws = ws;
         return this;
     }
-    public AudioNodeEntryImpl setInitializer(SocketInitializer initializer) {
-        this.initializer = initializer;
+    public AudioNodeEntryImpl setBaseInterval(long baseInterval) {
+        this.baseInterval = baseInterval;
         return this;
     }
+    public AudioNodeEntryImpl setMaxInterval(long maxInterval) {
+        this.maxInterval = maxInterval;
+        return this;
+    }
+    public AudioNodeEntryImpl setFactory(WebSocketFactory factory) {
+        this.factory = factory;
+        return this;
+    }
+    public AudioNodeEntryImpl setUnit(TimeUnit unit) {
+        this.unit = unit;
+        return this;
+    }
+    public AudioNodeEntryImpl setExpander(ReconnectIntervalFunction expander) {
+        this.expander = expander;
+        return this;
+    }
+    @SuppressWarnings("UnusedReturnValue")
     public AudioNodeEntryImpl setHandlers(Map<String, SocketHandler> handlers) {
         this.handlers = handlers;
         return this;

@@ -23,6 +23,8 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectCollections;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import samophis.lavalink.client.entities.*;
 import samophis.lavalink.client.util.Asserter;
 
@@ -34,13 +36,17 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class LavaClientImpl extends LavaClient {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LavaClientImpl.class);
     private final LavaHttpManager manager;
     private final String password;
     private final int restPort, wsPort, shards;
-    private final long expireWriteMs, expireAccessMs, userId;
+    private final long expireWriteMs, expireAccessMs, userId, baseInterval, maxInterval;
+    private final ReconnectIntervalFunction expander;
+    private final TimeUnit unit;
     private final Cache<String, TrackDataPair> identifierCache;
     private volatile boolean isShutdown;
-    public LavaClientImpl(String password, int restPort, int wsPort, int shards, long expireWriteMs, long expireAccessMs, long userId, List<AudioNodeEntry> entries) {
+    public LavaClientImpl(String password, int restPort, int wsPort, int shards, long expireWriteMs, long expireAccessMs, long userId,
+                          long baseInterval, long maxInterval, ReconnectIntervalFunction expander, TimeUnit unit, List<AudioNodeEntry> entries) {
         super();
         this.manager = new LavaHttpManagerImpl(this);
         this.password = Asserter.requireNotNull(password);
@@ -50,6 +56,10 @@ public class LavaClientImpl extends LavaClient {
         this.expireWriteMs = Asserter.requireNotNegative(expireWriteMs);
         this.expireAccessMs = Asserter.requireNotNegative(expireAccessMs);
         this.userId = Asserter.requireNotNegative(userId);
+        this.baseInterval = baseInterval;
+        this.maxInterval = maxInterval < 0 ? LavaClient.DEFAULT_MAX_INTERVAL : maxInterval;
+        this.expander = expander == null ? LavaClient.DEFAULT_INTERVAL_EXPANDER : expander;
+        this.unit = unit == null ? LavaClient.DEFAULT_INTERVAL_UNIT : unit;
         this.identifierCache = Caffeine.newBuilder()
                 .initialCapacity(10)
                 .maximumSize(5000)
@@ -83,6 +93,25 @@ public class LavaClientImpl extends LavaClient {
     @Override
     public long getCacheExpireAfterAccessMs() {
         return expireAccessMs;
+    }
+    @Override
+    public long getGlobalBaseReconnectInterval() {
+        return baseInterval;
+    }
+    @Override
+    @Nonnegative
+    public long getGlobalMaximumReconnectInterval() {
+        return maxInterval;
+    }
+    @Nonnull
+    @Override
+    public ReconnectIntervalFunction getGlobalIntervalExpander() {
+        return expander;
+    }
+    @Nonnull
+    @Override
+    public TimeUnit getGlobalIntervalTimeUnit() {
+        return unit;
     }
     @Nonnegative
     @Override
@@ -119,20 +148,20 @@ public class LavaClientImpl extends LavaClient {
         Asserter.requireNotNull(entry);
         AudioNode node = nodes.remove(entry.getRawAddress() + entry.getWebSocketPort());
         if (node != null)
-            node.getSocket().disconnect(1000, "Client requested removal/disconnection of entry!");
+            node.closeConnection();
     }
     @Override
     public void removeEntry(@Nonnull String serverAddress, int websocketPort) {
         AudioNode node = nodes.remove(Asserter.requireNotNull(serverAddress) + Asserter.requireNotNegative(websocketPort));
         if (node != null)
-            node.getSocket().disconnect(1000, "Client requested removal/disconnection of entry!");
+            node.closeConnection();
     }
     @Override
     public void removeNode(@Nonnull AudioNode node) {
         AudioNodeEntry entry = Asserter.requireNotNull(node).getEntry();
         AudioNode nd = nodes.remove(entry.getRawAddress() + entry.getWebSocketPort());
         if (nd != null)
-            nd.getSocket().disconnect(1000, "Client requested removal/disconnection of node!");
+            nd.closeConnection();
     }
     @Nonnull
     @Override
@@ -154,7 +183,12 @@ public class LavaClientImpl extends LavaClient {
     public LavaPlayer newPlayer(@Nullable AudioNode node, long guild_id) {
         return players.computeIfAbsent(Asserter.requireNotNegative(guild_id), id -> {
             LavaPlayer player = new LavaPlayerImpl(this, id);
-            player.setNode(node == null ? getBestNode() : node);
+            AudioNode best = node == null ? getBestNode() : node;
+            if (best == null) {
+                LOGGER.warn("No available nodes when creating player for Guild ID: {}!", guild_id);
+                throw new IllegalStateException("No available nodes!");
+            }
+            player.setNode(best);
             return player;
         });
     }

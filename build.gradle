@@ -9,7 +9,7 @@ plugins {
 
 group 'com.github.samophis'
 description 'Fast client implementation for Lavalink.'
-version '2.6.0'
+version '3.0.0'
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'

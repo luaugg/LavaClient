@@ -45,6 +45,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
@@ -53,11 +54,18 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
     private final LoadBalancer balancer;
     private final AudioNodeEntryImpl entry;
     private final ScheduledExecutorService scheduler;
+    private final WebSocketFactory factory;
     private volatile WebSocket socket;
     private volatile Statistics statistics;
     private final AtomicReference<ScheduledFuture<?>> delayTask;
-    private final AtomicInteger reconnectInterval, reconnectAttempts;
+    private final AtomicInteger reconnectAttempts;
+    private final AtomicLong reconnectInterval;
+    private final TimeUnit intervalUnit;
+    private final ReconnectIntervalFunction intervalExpander;
+    private final long baseInterval, maxInterval;
     private volatile boolean usingVersionThree;
+    private volatile SocketConnectionHandler connectHandler, disconnectHandler;
+    private volatile ScheduledFuture<?> connectHandlerChecker, disconnectHandlerChecker;
     @SuppressWarnings("WeakerAccess")
     public AudioNodeImpl(@Nonnull LavaClient client, @Nonnull AudioNodeEntryImpl entry) {
         Asserter.requireNotNull(client);
@@ -65,15 +73,20 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         this.client = client;
         this.balancer = new LoadBalancerImpl(this);
         this.entry = entry;
-        this.scheduler = Executors.newScheduledThreadPool(2, runnable -> {
+        this.scheduler = Executors.newScheduledThreadPool(5, runnable -> {
             Thread thread = new Thread(runnable);
             thread.setName("SchedulerThread");
             thread.setPriority(Thread.MAX_PRIORITY);
             thread.setUncaughtExceptionHandler((thread1, err) -> LOGGER.error("Error in SchedulerThread!", err));
             return thread;
         });
+        this.baseInterval = entry.getBaseReconnectInterval();
+        this.maxInterval = entry.getMaximumReconnectInterval();
+        this.factory = entry.getWebSocketFactory();
+        this.intervalUnit = entry.getIntervalTimeUnit();
+        this.intervalExpander = entry.getIntervalExpander();
         this.delayTask = new AtomicReference<>();
-        this.reconnectInterval = new AtomicInteger(0);
+        this.reconnectInterval = new AtomicLong(baseInterval);
         this.reconnectAttempts = new AtomicInteger(0);
         this.usingVersionThree = false;
         try {
@@ -84,7 +97,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         init();
     }
     private void initSocket() throws IOException {
-        WebSocket socket = new WebSocketFactory().createSocket(entry.getWebSocketAddress() + ":" + entry.getWebSocketPort());
+        WebSocket socket = factory.createSocket(entry.getWebSocketAddress() + ":" + entry.getWebSocketPort());
         SocketInitializer init = entry.getSocketInitializer();
         if (init != null)
             socket = Asserter.requireNotNull(init.initialize(socket));
@@ -168,7 +181,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         ScheduledFuture<?> innerTask = delayTask.get();
         if (innerTask != null)
             return;
-        int time = reconnectInterval.getAndSet((int) Math.min(Math.pow(2, reconnectAttempts.getAndIncrement()), 15));
+        long time = reconnectInterval.getAndSet(intervalExpander.expand(this, reconnectInterval.get()));
         delayTask.set(scheduler.schedule(() -> {
             try {
                 websocket.recreate().connectAsynchronously();
@@ -177,7 +190,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
                 LOGGER.error("Attempt #{}: Error when re-creating WebSocket! Message: {}", reconnectAttempts.get(), exc.getMessage());
                 throw new SocketConnectionException(exc);
             }
-        }, time, TimeUnit.SECONDS));
+        }, time, intervalUnit));
     }
     @Override
     @Nonnull
@@ -209,16 +222,23 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         this.usingVersionThree = (found != null && found.get(0).equals("3"));
         client.getPlayers().forEach(player -> {
             AudioNode node = client.getBestNode();
-            if (node != null)
+            if (node != null) {
+                ((LavaPlayerImpl) player).setState(State.NOT_CONNECTED);
                 player.setNode(node);
+            }
         });
-        reconnectInterval.set(0);
+        reconnectInterval.set(baseInterval);
         reconnectAttempts.set(0);
         ScheduledFuture<?> task = delayTask.get();
         if (task != null) {
             task.cancel(true);
             delayTask.set(null);
         }
+        if (connectHandlerChecker != null)
+            connectHandlerChecker.cancel(true);
+        if (connectHandler != null)
+            connectHandler.handleConnection(this, socket);
+        connectHandler = null;
     }
     @Override
     public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) {
@@ -227,12 +247,13 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
             AudioNode node = client.getBestNode();
             if (node == null)
                 return;
-            if (equals(player.getConnectedNode()))
+            if (equals(player.getConnectedNode())) {
+                ((LavaPlayerImpl) player).setState(State.NOT_CONNECTED);
                 player.setNode(node);
+            }
         });
         String reason = closedByServer ? serverCloseFrame.getCloseReason() : clientCloseFrame.getCloseReason();
         int code = closedByServer ? serverCloseFrame.getCloseCode() : clientCloseFrame.getCloseCode();
-        System.out.println("Closed with reason: " + reason + " and code: " + code + " by " + (closedByServer ? "server" : "client"));
         if (closedByServer) {
             if (code == 1000 || code == 1001)
                 LOGGER.info("Lavalink Server - {}:{} - closed the connection gracefully with the reason: {} and close code: {}", entry.getWebSocketAddress(), entry.getWebSocketPort(), reason, code);
@@ -241,6 +262,11 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
                 resetDelayConditions(websocket);
             }
         }
+        if (disconnectHandlerChecker != null)
+            disconnectHandlerChecker.cancel(true);
+        if (disconnectHandler != null)
+            disconnectHandler.handleConnection(this, socket);
+        disconnectHandler = null;
     }
     @Override
     public void onTextMessage(WebSocket websocket, String text) {
@@ -296,6 +322,16 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         }
     }
     @Override
+    public void openConnection(@Nullable SocketConnectionHandler connectHandler) {
+        this.connectHandler = connectHandler;
+        this.connectHandlerChecker = scheduler.schedule(() -> {
+            if (this.connectHandler != null)
+                LOGGER.warn("Connection attempt with handler timed out!");
+            this.connectHandler = null;
+        }, 2, TimeUnit.SECONDS);
+        openConnection();
+    }
+    @Override
     public void closeConnection() {
         if (socket == null) {
             LOGGER.error("Attempt to close a non-existent WebSocket on the node: {}", entry.getWebSocketAddress() + ":" + entry.getWebSocketPort());
@@ -305,13 +341,64 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
             LOGGER.error("Attempt to close the connection to a node using the URI: {} when it's already closed.", socket.getURI().toString());
             throw new IllegalStateException("Socket == CLOSED");
         }
-        socket.disconnect(1000);
+        socket.disconnect(1000, "LavaClient requested disconnection from this node!");
         reconnectAttempts.set(0);
-        reconnectInterval.set(0);
+        reconnectInterval.set(baseInterval);
         ScheduledFuture<?> task = delayTask.get();
         if (task != null) {
             task.cancel(true);
             delayTask.set(null);
         }
+    }
+    @Override
+    public void closeConnection(@Nullable SocketConnectionHandler disconnectHandler) {
+        this.disconnectHandler = disconnectHandler;
+        this.disconnectHandlerChecker = scheduler.schedule(() -> {
+            if (this.disconnectHandler != null)
+                LOGGER.warn("Disconnection attempt with attached handler timed out!");
+            this.disconnectHandler = null;
+        }, 2, TimeUnit.SECONDS);
+        closeConnection();
+    }
+    @Override
+    public int getReconnectAttempts() {
+        return reconnectAttempts.get();
+    }
+    @Override
+    public long getReconnectInterval() {
+        return reconnectInterval.get();
+    }
+    @Override
+    public long getBaseReconnectInterval() {
+        return baseInterval;
+    }
+    @Override
+    public long getMaximumReconnectInterval() {
+        return maxInterval;
+    }
+    @Nonnull
+    @Override
+    public WebSocketFactory getWebSocketFactory() {
+        return factory;
+    }
+    @Nonnull
+    @Override
+    public TimeUnit getIntervalTimeUnit() {
+        return intervalUnit;
+    }
+    @Nonnull
+    @Override
+    public ReconnectIntervalFunction getIntervalExpander() {
+        return intervalExpander;
+    }
+    @Nullable
+    @Override
+    public SocketConnectionHandler getConnectionCallback() {
+        return connectHandler;
+    }
+    @Nullable
+    @Override
+    public SocketConnectionHandler getDisconnectionCallback() {
+        return disconnectHandler;
     }
 }

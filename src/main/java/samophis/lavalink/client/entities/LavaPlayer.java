@@ -115,6 +115,27 @@ public interface LavaPlayer {
     boolean isPaused();
 
     /**
+     * The last Session ID previously used to connect to a Lavalink Node, stored by LavaClient for later use with re-connecting.
+     * @return The <b>possibly-null</b> last Session ID previously used to connect to a Lavalink Node.
+     */
+    @Nullable
+    String getSessionId();
+
+    /**
+     * The last Voice Token previously used to connect to a Lavalink Node, stored by LavaClient for later use with re-connecting.
+     * @return The <b>possibly-null</b> last Voice Token previously used to connect to a Lavalink Node.
+     */
+    @Nullable
+    String getVoiceToken();
+
+    /**
+     * The last Voice Server Endpoint previously used to connect to a Lavalink Node, stored by LavaClient for later use with re-connecting.
+     * @return The <b>possibly-null</b> last Voice Server Endpoint previously used to connect to a Lavalink Node.
+     */
+    @Nullable
+    String getEndpoint();
+
+    /**
      * Adds a listener to this player.
      * @throws NullPointerException If the provided listener is null.
      * @param listener The <b>non-null</b> listener to add to the player.

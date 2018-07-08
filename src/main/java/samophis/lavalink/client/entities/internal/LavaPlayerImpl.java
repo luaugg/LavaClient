@@ -50,6 +50,7 @@ public class LavaPlayerImpl implements LavaPlayer {
     private volatile AudioNode node;
     private volatile AudioTrack track;
     private volatile State state;
+    private volatile String session_id, token, endpoint;
     @SuppressWarnings("WeakerAccess")
     public LavaPlayerImpl(@Nonnull LavaClient client, @Nonnegative long guild_id) {
         this.client = Asserter.requireNotNull(client);
@@ -120,6 +121,21 @@ public class LavaPlayerImpl implements LavaPlayer {
     @Override
     public State getState() {
         return state;
+    }
+    @Nullable
+    @Override
+    public String getSessionId() {
+        return session_id;
+    }
+    @Nullable
+    @Override
+    public String getVoiceToken() {
+        return token;
+    }
+    @Nullable
+    @Override
+    public String getEndpoint() {
+        return endpoint;
     }
     @Override
     public void addListener(@Nonnull AudioEventListener listener) {
@@ -309,7 +325,6 @@ public class LavaPlayerImpl implements LavaPlayer {
             LOGGER.warn("WebSocket Connection isn't open/available!");
             throw new IllegalStateException("WebSocket Connection isn't open/available!");
         }
-        client.removePlayer(guild_id);
         state = setNotConnected ? State.NOT_CONNECTED : State.DESTROYED;
         node.getSocket().sendText(JsonStream.serialize(new DestroyPlayer(guild_id)));
     }
@@ -380,7 +395,10 @@ public class LavaPlayerImpl implements LavaPlayer {
             LOGGER.warn("WebSocket Connection isn't open/available!");
             throw new IllegalStateException("WebSocket Connection isn't open/available!");
         }
-        VoiceUpdate update = new VoiceUpdate(guild_id, Asserter.requireNotNull(session_id), Asserter.requireNotNull(token), Asserter.requireNotNull(endpoint));
+        this.session_id = Asserter.requireNotNull(session_id);
+        this.token = Asserter.requireNotNull(token);
+        this.endpoint = Asserter.requireNotNull(endpoint);
+        VoiceUpdate update = new VoiceUpdate(guild_id, this.session_id, this.token, this.endpoint);
         node.getSocket().sendText(JsonStream.serialize(update));
         this.state = State.CONNECTED;
     }
@@ -402,7 +420,7 @@ public class LavaPlayerImpl implements LavaPlayer {
         this.channel_id = channel_id;
         return this;
     }
-    @SuppressWarnings("unused")
+    @SuppressWarnings("UnusedReturnValue")
     public LavaPlayerImpl setState(State state) {
         this.state = state;
         return this;
