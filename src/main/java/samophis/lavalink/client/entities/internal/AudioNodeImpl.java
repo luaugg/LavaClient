@@ -181,7 +181,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         ScheduledFuture<?> innerTask = delayTask.get();
         if (innerTask != null)
             return;
-        long time = reconnectInterval.getAndSet(intervalExpander.expand(this, reconnectInterval.get()));
+        long time = reconnectInterval.getAndSet(Math.min(intervalExpander.expand(this, reconnectInterval.get()), maxInterval));
         delayTask.set(scheduler.schedule(() -> {
             try {
                 websocket.recreate().connectAsynchronously();

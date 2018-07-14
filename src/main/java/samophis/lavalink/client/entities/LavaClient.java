@@ -56,7 +56,7 @@ public abstract class LavaClient {
     /** The default TimeUnit to wait for the provided interval in. */
     public static final TimeUnit DEFAULT_INTERVAL_UNIT = TimeUnit.SECONDS;
     /** The default interval expander, equivalent to raising 2 to the amount of reconnect attempts. */
-    public static final ReconnectIntervalFunction DEFAULT_INTERVAL_EXPANDER = (node, old) -> (long) Math.pow(2, old);
+    public static final ReconnectIntervalFunction DEFAULT_INTERVAL_EXPANDER = (node, old) -> (long) Math.pow(2, node.getReconnectAttempts());
 
     protected final Map<String, AudioNode> nodes;
     protected final Long2ObjectMap<LavaPlayer> players;
