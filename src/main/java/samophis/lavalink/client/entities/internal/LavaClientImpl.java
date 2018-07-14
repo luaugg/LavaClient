@@ -147,20 +147,20 @@ public class LavaClientImpl extends LavaClient {
     public void removeEntry(@Nonnull AudioNodeEntry entry) {
         Asserter.requireNotNull(entry);
         AudioNode node = nodes.remove(entry.getRawAddress() + entry.getWebSocketPort());
-        if (node != null)
+        if (node != null && node.isAvailable())
             node.closeConnection();
     }
     @Override
     public void removeEntry(@Nonnull String serverAddress, int websocketPort) {
         AudioNode node = nodes.remove(Asserter.requireNotNull(serverAddress) + Asserter.requireNotNegative(websocketPort));
-        if (node != null)
+        if (node != null && node.isAvailable())
             node.closeConnection();
     }
     @Override
     public void removeNode(@Nonnull AudioNode node) {
         AudioNodeEntry entry = Asserter.requireNotNull(node).getEntry();
         AudioNode nd = nodes.remove(entry.getRawAddress() + entry.getWebSocketPort());
-        if (nd != null)
+        if (nd != null && nd.isAvailable())
             nd.closeConnection();
     }
     @Nonnull
