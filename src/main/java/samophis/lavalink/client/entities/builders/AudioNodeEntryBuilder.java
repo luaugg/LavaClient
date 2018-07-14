@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class AudioNodeEntryBuilder {
     private final LavaClient client;
     private final Map<String, SocketHandler> handlers;
@@ -41,6 +41,13 @@ public class AudioNodeEntryBuilder {
     public AudioNodeEntryBuilder(@Nonnull LavaClient client) {
         this.client = Asserter.requireNotNull(client);
         this.handlers = new Object2ObjectOpenHashMap<>();
+        this.password = client.getGlobalServerPassword();
+        this.restPort = client.getGlobalRestPort();
+        this.wsPort = client.getGlobalWebSocketPort();
+        this.expander = client.getGlobalIntervalExpander();
+        this.unit = client.getGlobalIntervalTimeUnit();
+        this.baseInterval = client.getGlobalBaseReconnectInterval();
+        this.maxInterval = client.getGlobalMaximumReconnectInterval();
     }
     public AudioNodeEntryBuilder setAddress(String address) {
         this.address = address;

@@ -59,7 +59,7 @@ public class AudioNodeEntryImpl implements AudioNodeEntry {
         this.handlers = Asserter.requireNotNull(handlers);
         this.factory = factory == null ? new WebSocketFactory() : factory;
         this.baseInterval = baseInterval;
-        this.maxInterval = maxInterval < 0 ? client.getGlobalMaximumReconnectInterval() : maxInterval;
+        this.maxInterval = maxInterval <= 0 ? client.getGlobalMaximumReconnectInterval() : maxInterval;
         this.expander = expander == null ? client.getGlobalIntervalExpander() : expander;
         this.unit = unit == null ? client.getGlobalIntervalTimeUnit() : unit;
         this.fileBased = false;

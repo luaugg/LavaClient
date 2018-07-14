@@ -95,9 +95,15 @@ public class LavaClientBuilder {
     public LavaClientBuilder() {
         init();
         this.entries = new ObjectArrayList<>();
+        this.maxInterval = LavaClient.DEFAULT_MAX_INTERVAL;
+        this.baseInterval = LavaClient.DEFAULT_BASE_INTERVAL;
+        this.expireAccessMs = LavaClient.DEFAULT_CACHE_EXPIRE_ACCESS;
+        this.expireWriteMs = LavaClient.DEFAULT_CACHE_EXPIRE_WRITE;
         this.password = LavaClient.DEFAULT_PASSWORD;
         this.restPort = LavaClient.DEFAULT_REST_PORT;
         this.wsPort = LavaClient.DEFAULT_WS_PORT;
+        this.unit = LavaClient.DEFAULT_INTERVAL_UNIT;
+        this.expander = LavaClient.DEFAULT_INTERVAL_EXPANDER;
     }
     public LavaClientBuilder addEntry(@Nonnull AudioNodeEntry entry) {
         entries.add(Asserter.requireNotNull(entry));

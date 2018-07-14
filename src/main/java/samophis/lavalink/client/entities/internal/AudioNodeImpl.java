@@ -177,11 +177,15 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
         handlers.put(statsHandler.getName(), statsHandler);
         handlers.put(trackEventHandler.getName(), trackEventHandler);
     }
-    private void resetDelayConditions(WebSocket websocket) {
+    private void resetDelayConditions(WebSocket websocket, boolean shouldSchedule) {
         ScheduledFuture<?> innerTask = delayTask.get();
         if (innerTask != null)
             return;
-        long time = reconnectInterval.getAndSet(Math.min(intervalExpander.expand(this, reconnectInterval.get()), maxInterval));
+        reconnectInterval.set(Math.min(intervalExpander.expand(this, reconnectInterval.get()), maxInterval));
+        if (shouldSchedule)
+            resetDelayTask(websocket);
+    }
+    private void resetDelayTask(WebSocket websocket) {
         delayTask.set(scheduler.schedule(() -> {
             try {
                 websocket.recreate().connectAsynchronously();
@@ -190,7 +194,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
                 LOGGER.error("Attempt #{}: Error when re-creating WebSocket! Message: {}", reconnectAttempts.get(), exc.getMessage());
                 throw new SocketConnectionException(exc);
             }
-        }, time, intervalUnit));
+        }, reconnectInterval.get(), intervalUnit));
     }
     @Override
     @Nonnull
@@ -200,10 +204,11 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
     @Override
     public void onConnectError(WebSocket websocket, WebSocketException exception) {
         socket = websocket;
-        int attempts = reconnectAttempts.get();
-        LOGGER.error((attempts > 0 ? "Attempt #" + attempts + ": " : "") + "Exception when asynchronously establishing a WebSocket connection! {}\n" +
+        resetDelayConditions(websocket, false);
+        int attempts = reconnectAttempts.incrementAndGet();
+        LOGGER.error("Attempt #" + attempts + ": Exception when asynchronously establishing a WebSocket connection! {}\n" +
                 "LavaClient will try to reconnect in {} second(s).", exception.getMessage(), reconnectInterval.get());
-        resetDelayConditions(websocket);
+        resetDelayTask(websocket);
     }
     @Override
     public void onError(WebSocket websocket, WebSocketException cause){
@@ -259,7 +264,7 @@ public class AudioNodeImpl extends WebSocketAdapter implements AudioNode {
                 LOGGER.info("Lavalink Server - {}:{} - closed the connection gracefully with the reason: {} and close code: {}", entry.getWebSocketAddress(), entry.getWebSocketPort(), reason, code);
             else {
                 LOGGER.warn("Lavalink Server - {}:{} - closed the connection unexpectedly with the reason: {} and close code: {}", entry.getWebSocketAddress(), entry.getWebSocketPort(), reason, code);
-                resetDelayConditions(websocket);
+                resetDelayConditions(websocket, true);
             }
         }
         if (disconnectHandlerChecker != null)
