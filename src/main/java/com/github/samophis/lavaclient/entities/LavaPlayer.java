@@ -40,19 +40,35 @@ public interface LavaPlayer {
     @CheckReturnValue
     boolean paused();
 
-    void stop();
+    @CheckReturnValue
+    @Nonnull
+    LavaPlayer stop();
 
-    void pause();
+	@CheckReturnValue
+	@Nonnull
+	LavaPlayer pause();
 
-    void resume();
+	@CheckReturnValue
+	@Nonnull
+	LavaPlayer resume();
 
-    void destroy();
+	@CheckReturnValue
+	@Nonnull
+	LavaPlayer destroy();
 
-    void seek(@Nonnegative final long position);
+	@CheckReturnValue
+	@Nonnull
+	LavaPlayer seek(@Nonnegative final long position);
 
-    void volume(@Nonnegative final int volume);
+	@CheckReturnValue
+	@Nonnull
+	LavaPlayer volume(@Nonnegative final int volume);
 
-    void connect(@Nonnull final AudioNode node);
+	@CheckReturnValue
+	@Nonnull
+	LavaPlayer connect(@Nonnull final AudioNode node);
 
-    void initialize(@Nonnull final String session_id, @Nonnull final String voice_token, @Nonnull final String endpoint);
+	@CheckReturnValue
+	@Nonnull
+	LavaPlayer initialize(@Nonnull final String session_id, @Nonnull final String voice_token, @Nonnull final String endpoint);
 }

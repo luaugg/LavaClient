@@ -4,13 +4,11 @@ import com.github.samophis.lavaclient.entities.AudioNode;
 import com.github.samophis.lavaclient.entities.LavaClient;
 import com.github.samophis.lavaclient.entities.LavaPlayer;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
-import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 
 @Getter
@@ -27,41 +25,45 @@ public class LavaPlayerImpl implements LavaPlayer {
 	private AudioTrack playingTrack;
 	private AudioNode connectedNode;
 
+	@Nonnull
 	@Override
-	public void pause() {
-		// pause logic
+	public LavaPlayer stop() {
+		return this;
 	}
 
+	@Nonnull
 	@Override
-	public void resume() {
-		// resume logic
+	public LavaPlayer pause() {
+		return this;
 	}
 
+	@Nonnull
 	@Override
-	public void destroy() {
-		// destroy logic
+	public LavaPlayer resume() {
+		return this;
 	}
 
+	@Nonnull
 	@Override
-	public void seek(@Nonnegative final long position) {
-		if (position < 0) {
-			throw new IllegalArgumentException("negative position!");
-		}
-		// position update logic
+	public LavaPlayer destroy() {
+		return this;
 	}
 
+	@Nonnull
 	@Override
-	public void connect(@Nonnull final AudioNode node) {
-		// connect to node logic
+	public LavaPlayer seek(final long position) {
+		return this;
 	}
 
+	@Nonnull
 	@Override
-	public void initialize(@Nonnull final String session_id, @Nonnull final String voice_token, @Nonnull final String endpoint) {
-		// voice update logic
+	public LavaPlayer connect(@Nonnull final AudioNode node) {
+		return this;
 	}
 
-	public void stop() {
-		// stop logic
+	@Nonnull
+	@Override
+	public LavaPlayer initialize(@Nonnull final String session_id, @Nonnull final String voice_token, @Nonnull final String endpoint) {
+		return this;
 	}
-
 }
