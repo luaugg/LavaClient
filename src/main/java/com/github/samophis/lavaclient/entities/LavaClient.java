@@ -8,6 +8,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public interface LavaClient {
 	@Nonnull
 	@CheckReturnValue
@@ -28,4 +29,18 @@ public interface LavaClient {
     @Nullable
 	@CheckReturnValue
 	LavaPlayer player(@Nonnegative final long guildId);
+
+    @Nonnull
+	@CheckReturnValue
+	LavaPlayer newPlayer(@Nonnegative final long guildId);
+
+    @Nonnull
+	@CheckReturnValue
+	LavaPlayer removePlayer(@Nonnegative final long guildId, final boolean shouldDestroy);
+
+	@Nonnull
+	@CheckReturnValue
+	default LavaPlayer removePlayer(@Nonnegative final long guildId) {
+		return removePlayer(guildId, true);
+	}
 }
