@@ -1,0 +1,145 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'com.jfrog.bintray' version '1.8.4'
+    id 'idea'
+    id 'com.github.johnrengelman.shadow' version '2.0.4'
+    id 'com.github.ben-manes.versions' version '0.20.0'
+}
+
+group 'com.github.samophis'
+description 'A lightweight, fast, library-independent client implementation for Lavalink v3.'
+version '4.0.0'
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+// Credit to natanbc for this -- I'm shit at Gradle
+
+task updateDocs(type: Copy) {
+    dependsOn javadoc
+    from "${buildDir}/docs/javadoc"
+    into "docs"
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.8.1'
+}
+
+shadowJar {
+    classifier = 'withDependencies'
+}
+
+// Credit to the JDA Developers
+
+bintray {
+    user = bintrayUsername
+    key = bintrayApiKey
+    publications = ['BintrayRelease']
+    pkg {
+        repo = 'maven'
+        name = 'LavaClient'
+        licenses = ['Apache-2.0']
+        vcsUrl = ['https://github.com/SamOphis/LavaClient.git']
+        publish = true
+        version {
+            name = project.version
+            released = new Date()
+        }
+    }
+}
+
+publishing {
+    publications {
+        BintrayRelease(MavenPublication) {
+            from components.java
+            groupId group
+            artifactId 'LavaClient'
+            version version
+            artifact javadocJar
+            artifact sourcesJar
+        }
+    }
+}
+
+build {
+    dependsOn clean
+    dependsOn jar
+    dependsOn javadocJar
+    dependsOn sourcesJar
+    dependsOn shadowJar
+    dependsOn updateDocs
+    dependsOn test
+
+    jar.mustRunAfter clean
+    javadocJar.mustRunAfter jar
+    sourcesJar.mustRunAfter javadocJar
+    shadowJar.mustRunAfter sourcesJar
+}
+
+// Credit to the JDA Development Team
+
+String getProjectProperty(String propertyName)
+{
+    String property = ""
+    if (hasProperty(propertyName))
+    {
+        property = this.properties[propertyName]
+    }
+    return property
+}
+
+bintrayUpload {
+    dependsOn build
+
+    onlyIf { !getProjectProperty("bintrayUsername").empty }
+    onlyIf { !getProjectProperty("bintrayApiKey").empty }
+}
+
+javadoc {
+    options.memberLevel = JavadocMemberLevel.PUBLIC
+    options.author()
+    options.encoding = 'UTF-8'
+
+    exclude('com/github/samophis/lavaclient/entities/builders')
+    exclude('com/github/samophis/lavaclient/entities/events')
+    exclude('com/github/samophis/lavaclient/entities/internal')
+    exclude('com/github/samophis/lavaclient/entities/messages')
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+repositories {
+    jcenter()
+}
+
+ext {
+    vertxVersion = '3.6.3'
+    findbugsSourcesVersion = '3.0.2'
+    lavaplayerSourcesVersion = '1.3.10'
+    slf4jVersion = '1.7.25'
+    troveVersion = '3.0.3'
+}
+
+dependencies {
+    compile group: 'io.vertx', name: 'vertx-core', version: vertxVersion
+    compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
+    compile group: 'net.sf.trove4j', name: 'trove4j', version: troveVersion
+    compileOnly group: 'com.google.code.findbugs', name: 'jsr305', version: findbugsSourcesVersion
+    compileOnly group: 'com.sedmelluq', name: 'lavaplayer', version: lavaplayerSourcesVersion
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+
