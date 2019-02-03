@@ -10,17 +10,16 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.WebSocket;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.CheckReturnValue;
+import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-@RequiredArgsConstructor
 @Accessors(fluent = true)
 public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AudioNodeImpl.class);
@@ -28,18 +27,32 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 	@Getter private final String baseUrl;
 	@Getter private final String password;
 	@Getter private final int port;
-	@Getter private final String websocketUrl = String.format("ws://%s:d", baseUrl, port);
-	@Getter private final String restUrl = String.format("http://%s:%d", baseUrl, port);
-	@Getter private final LoadBalancer loadBalancer = new LoadBalancerImpl(this);
+	@Getter private final String websocketUrl;
+	@Getter private final String restUrl;
+	@Getter private final LoadBalancer loadBalancer;
 	@Getter private boolean available;
 
-	private final String controlAddress = controlMessageAddress();
-	private final String recvAddress = eventRecvMessageAddress();
-	private final String sendAddress = eventSendMessageAddress();
+	private final String controlAddress;
+	private final String recvAddress;
+	private final String sendAddress;
 
 	@Setter @Getter private Statistics statistics;
 	private HttpClient httpClient;
 	private WebSocket socket;
+
+	public AudioNodeImpl(@Nonnull final LavaClient client, @Nonnull final String baseUrl,
+	                     @Nonnull final String password, @Nonnegative final int port) {
+		this.client = client;
+		this.baseUrl = baseUrl;
+		this.password = password;
+		this.port = port;
+		websocketUrl = String.format("ws://%s:%d", baseUrl, port);
+		restUrl = String.format("http://%s:%d", baseUrl, port);
+		loadBalancer = new LoadBalancerImpl(this);
+		controlAddress = controlMessageAddress();
+		recvAddress = eventRecvMessageAddress();
+		sendAddress = eventSendMessageAddress();
+	}
 
 	@Override
 	public void openConnection() {

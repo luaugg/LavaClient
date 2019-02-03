@@ -7,7 +7,6 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @NoArgsConstructor
-@Builder
 @Accessors(fluent = true)
 public class StatisticsImpl implements Statistics {
 	private int players, playingPlayers, cpuCores;

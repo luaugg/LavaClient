@@ -1,4 +1,7 @@
 .idea/*.xml
 .idea/modules
+.idea/dictionaries
 .gradle/
 build/
+# while v4 is being finished
+docs/
