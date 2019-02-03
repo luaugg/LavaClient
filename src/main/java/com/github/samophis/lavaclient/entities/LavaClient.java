@@ -35,12 +35,18 @@ public interface LavaClient {
 	LavaPlayer newPlayer(@Nonnegative final long guildId);
 
     @Nonnull
-	@CheckReturnValue
 	LavaPlayer removePlayer(@Nonnegative final long guildId, final boolean shouldDestroy);
 
 	@Nonnull
-	@CheckReturnValue
 	default LavaPlayer removePlayer(@Nonnegative final long guildId) {
 		return removePlayer(guildId, true);
 	}
+
+	@Nonnegative
+	@CheckReturnValue
+	long userId();
+
+	@Nonnegative
+	@CheckReturnValue
+	int numShards();
 }

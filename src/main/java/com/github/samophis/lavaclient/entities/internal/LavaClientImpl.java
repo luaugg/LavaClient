@@ -5,8 +5,8 @@ import com.github.samophis.lavaclient.entities.LavaClient;
 import com.github.samophis.lavaclient.entities.LavaPlayer;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import io.vertx.core.Vertx;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
@@ -19,11 +19,13 @@ import java.util.List;
 @Getter
 @Setter
 @Accessors(fluent = true)
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class LavaClientImpl implements LavaClient {
 	private final Vertx vertx;
 	private final List<AudioNode> nodes;
 	private final TLongObjectHashMap<LavaPlayer> players;
+	private final long userId;
+	private final int numShards;
 
 	@Nonnull
 	@Override
