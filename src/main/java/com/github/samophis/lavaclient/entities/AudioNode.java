@@ -5,7 +5,16 @@ import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+@SuppressWarnings("unused")
 public interface AudioNode {
+	@Nullable
+	@CheckReturnValue
+	Statistics statistics();
+
+	@Nonnull
+	@CheckReturnValue
+	LoadBalancer loadBalancer();
+
 	@Nonnull
 	@CheckReturnValue
 	LavaClient client();
@@ -22,13 +31,9 @@ public interface AudioNode {
 	@CheckReturnValue
 	String restUrl();
 
-	@Nullable
+	@Nonnull
 	@CheckReturnValue
-	Runnable onConnectCallback();
-
-	@Nullable
-	@CheckReturnValue
-	Runnable onDisconnectCallback();
+	String password();
 
 	@Nonnegative
 	@CheckReturnValue
