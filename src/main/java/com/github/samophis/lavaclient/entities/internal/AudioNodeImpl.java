@@ -9,6 +9,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.WebSocket;
+import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -92,7 +93,7 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 	public void start() {
 		final var bus = vertx.eventBus();
 		bus.consumer(controlAddress, this::handleControlMessage);
-		bus.consumer(recvAddress, this::handleReceivedEvent);
+		// bus.consumer(recvAddress, this::handleReceivedEvent);
 		bus.consumer(sendAddress, this::handleSentEvent);
 		httpClient = vertx.createHttpClient();
 	}
@@ -119,7 +120,8 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 					available = true;
 					if (onConnect != null) {
 						onConnect.run();
-					}}, err -> LOGGER.error("Error establishing a WebSocket connection! {}", err));
+					}
+					}, err -> LOGGER.error("Error establishing a WebSocket connection! {}", err));
 			case DISCONNECT:
 				final var onDisconnect = (Runnable) message.object;
 				if (socket == null) {
@@ -145,11 +147,14 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 		}
 	}
 
-	private void handleSentEvent(@Nonnull final Message<?> msg) {
-
+	private void handleSentEvent(@Nonnull final Message<JsonObject> msg) {
+		if (!available) {
+			throw new IllegalStateException("socket isn't available!");
+		}
+		socket.writeTextMessage(msg.body().toString());
 	}
 
-	private void handleReceivedEvent(@Nonnull final Message<?> msg) {
+	private void handleReceivedEvent(@Nonnull final String msg) {
 
 	}
 

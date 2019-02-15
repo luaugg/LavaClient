@@ -3,10 +3,12 @@ package com.github.samophis.lavaclient.entities.internal;
 import com.github.samophis.lavaclient.entities.AudioNode;
 import com.github.samophis.lavaclient.entities.LavaClient;
 import com.github.samophis.lavaclient.entities.LavaPlayer;
+import com.github.samophis.lavaclient.events.*;
+import com.github.samophis.lavaclient.util.JsonPojoCodec;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
@@ -19,13 +21,34 @@ import java.util.List;
 @Getter
 @Setter
 @Accessors(fluent = true)
-@RequiredArgsConstructor
 public class LavaClientImpl implements LavaClient {
 	private final Vertx vertx;
 	private final List<AudioNode> nodes;
 	private final TLongObjectHashMap<LavaPlayer> players;
 	private final long userId;
 	private final int numShards;
+
+	public LavaClientImpl(final Vertx vertx, final List<AudioNode> nodes,
+	                      final TLongObjectHashMap<LavaPlayer> players, final long userId, final int numShards) {
+		this.vertx = vertx;
+		this.nodes = nodes;
+		this.players = players;
+		this.userId = userId;
+		this.numShards = numShards;
+		register(JsonObject.class);
+		register(TrackStartEvent.class);
+		register(TrackEndEvent.class);
+		register(TrackExceptionEvent.class);
+		register(TrackStuckEvent.class);
+		register(PlayerPauseEvent.class);
+		register(PlayerResumeEvent.class);
+		register(PlayerUpdateEvent.class);
+		register(StatsUpdateEvent.class);
+	}
+
+	private <T> void register(@Nonnull final Class<T> cls) {
+		vertx.eventBus().registerDefaultCodec(cls, new JsonPojoCodec<>(cls));
+	}
 
 	@Nonnull
 	@Override
