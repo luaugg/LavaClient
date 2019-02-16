@@ -1,9 +1,10 @@
 package com.github.samophis.lavaclient.entities.internal;
 
-import com.github.samophis.lavaclient.entities.AudioNode;
-import com.github.samophis.lavaclient.entities.LavaClient;
-import com.github.samophis.lavaclient.entities.LoadBalancer;
-import com.github.samophis.lavaclient.entities.Statistics;
+import com.github.samophis.lavaclient.entities.*;
+import com.github.samophis.lavaclient.events.*;
+import com.github.samophis.lavaclient.exceptions.RemoteTrackException;
+import com.github.samophis.lavaclient.util.AudioTrackUtil;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.MultiMap;
 import io.vertx.core.eventbus.Message;
@@ -93,7 +94,6 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 	public void start() {
 		final var bus = vertx.eventBus();
 		bus.consumer(controlAddress, this::handleControlMessage);
-		// bus.consumer(recvAddress, this::handleReceivedEvent);
 		bus.consumer(sendAddress, this::handleSentEvent);
 		httpClient = vertx.createHttpClient();
 	}
@@ -121,6 +121,7 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 					if (onConnect != null) {
 						onConnect.run();
 					}
+					socket.textMessageHandler(this::handleReceivedMessage);
 					}, err -> LOGGER.error("Error establishing a WebSocket connection! {}", err));
 			case DISCONNECT:
 				final var onDisconnect = (Runnable) message.object;
@@ -154,8 +155,116 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 		socket.writeTextMessage(msg.body().toString());
 	}
 
-	private void handleReceivedEvent(@Nonnull final String msg) {
+	private void handleReceivedMessage(@Nonnull final String msg) {
+		final var json = new JsonObject(msg);
+		final var guildId = json.getString("guildId", null);
+		var player = (LavaPlayerImpl) null;
+		if (guildId != null) {
+			player = (LavaPlayerImpl) client.player(Long.parseUnsignedLong(guildId));
+			if (player == null) {
+				LOGGER.warn("unknown player for guild id: {}", guildId);
+				throw new IllegalStateException("unknown player | guild id: " + guildId);
+			}
+		}
 
+		var event = (LavalinkEvent) null;
+		final var op = json.getString("op");
+		switch (op) {
+			case "playerUpdate":
+				if (player == null) {
+					throw new IllegalStateException("report this bug to the developer(s), player null for update");
+				}
+				final var state = json.getJsonObject("state");
+				final var timestamp = state.getLong("timestamp");
+				final var position = state.getLong("position");
+				player.position(position);
+				player.timestamp(timestamp);
+				event = new PlayerUpdateEvent(this, player, timestamp, position);
+				break;
+			case "stats":
+				// objects
+				final var cpuObject = json.getJsonObject("cpu");
+				final var memObject = json.getJsonObject("memory");
+				final var frameObject = json.getJsonObject("frameStats", null);
+				final var cpuCores = cpuObject.getInteger("cores");
+				// actual fields
+				final var players = json.getInteger("players");
+				final var playingPlayers = json.getInteger("playingPlayers");
+				final var systemLoad = cpuObject.getDouble("systemLoad");
+				final var lavalinkLoad = cpuObject.getDouble("lavalinkLoad");
+				final var uptime = json.getLong("uptime");
+
+				final var freeMemory = memObject.getInteger("free");
+				final var allocatedMemory = memObject.getInteger("allocated");
+				final var usedMemory = memObject.getInteger("used");
+				final var reservableMemory = memObject.getInteger("reservable");
+
+				var sentFrames = (Long) null;
+				var nulledFrames = (Long) null;
+				var deficitFrames = (Long) null;
+				if (frameObject != null) {
+					sentFrames = frameObject.getLong("sent");
+					nulledFrames = frameObject.getLong("nulled");
+					deficitFrames = frameObject.getLong("deficit");
+				}
+				final var stats = new StatisticsImpl()
+						.players(players)
+						.playingPlayers(playingPlayers)
+						.uptime(uptime)
+						.cpuCores(cpuCores)
+						.systemLoad(systemLoad)
+						.lavalinkLoad(lavalinkLoad)
+						.usedMemory(usedMemory)
+						.allocatedMemory(allocatedMemory)
+						.freeMemory(freeMemory)
+						.reservableMemory(reservableMemory)
+						.sentFrames(sentFrames)
+						.nulledFrames(nulledFrames)
+						.deficitFrames(deficitFrames);
+				statistics = stats;
+				event = new StatsUpdateEvent(this, stats);
+				break;
+			case "event":
+				final var type = json.getString("type");
+				switch (type) {
+					case "TrackEndEvent":
+						if (player == null) {
+							throw new IllegalStateException("report to developers | player null for track end");
+						}
+						player.playingTrack(null);
+						final var track1 = AudioTrackUtil.fromString(json.getString("track"));
+						final var reason = AudioTrackEndReason.valueOf(json.getString("reason"));
+						event = new TrackEndEvent(track1, this, player, reason);
+					case "TrackStuckEvent":
+						if (player == null) {
+							throw new IllegalStateException("report to developers | player null for track end");
+						}
+						final var track2 = AudioTrackUtil.fromString(json.getString("track"));
+						event = new TrackStuckEvent(track2, this, player, json.getLong("thresholdMs"));
+					case "TrackExceptionEvent":
+						if (player == null) {
+							throw new IllegalStateException("report to developers | player null for track end");
+						}
+						final var track3 = AudioTrackUtil.fromString(json.getString("track"));
+						event = new TrackExceptionEvent(track3, this, player, new RemoteTrackException(track3, this,
+								player, json.getString("error")));
+					case "WebSocketClosedEvent":
+						if (player == null) {
+							throw new IllegalStateException("report to developers | player null for track end");
+						}
+						player.playingTrack(null); // probably safer to do this instead of maintaining old state
+						event = new WebSocketClosedEvent(this, json.getString("reason"), json.getBoolean("byRemote"),
+								json.getInteger("code"));
+					default:
+						LOGGER.warn("Unsupported Event Type: {}", type);
+				}
+				break;
+			default:
+				LOGGER.warn("Unsupported Incoming Message Type: {}", op);
+		}
+		if (event != null) {
+			vertx.eventBus().publish(recvAddress, event);
+		}
 	}
 
 	@CheckReturnValue
