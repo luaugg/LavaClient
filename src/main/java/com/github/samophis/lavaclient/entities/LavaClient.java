@@ -26,6 +26,10 @@ public interface LavaClient {
     @CheckReturnValue
     AudioNode node(@Nonnull final String baseUrl);
 
+    @Nonnull
+    @CheckReturnValue
+    AudioNode bestNode();
+
     @Nullable
 	@CheckReturnValue
 	LavaPlayer player(@Nonnegative final long guildId);
@@ -37,11 +41,6 @@ public interface LavaClient {
     @Nonnull
 	LavaPlayer removePlayer(@Nonnegative final long guildId, final boolean shouldDestroy);
 
-	@Nonnull
-	default LavaPlayer removePlayer(@Nonnegative final long guildId) {
-		return removePlayer(guildId, true);
-	}
-
 	@Nonnegative
 	@CheckReturnValue
 	long userId();
@@ -49,4 +48,19 @@ public interface LavaClient {
 	@Nonnegative
 	@CheckReturnValue
 	int numShards();
+
+	void addNode(@Nonnull final AudioNode node);
+
+	void removeNode(@Nonnull final String baseUrl);
+
+	void shutdown();
+
+	default void removeNode(@Nonnull final AudioNode node) {
+		removeNode(node.baseUrl());
+	}
+
+	@Nonnull
+	default LavaPlayer removePlayer(@Nonnegative final long guildId) {
+		return removePlayer(guildId, true);
+	}
 }

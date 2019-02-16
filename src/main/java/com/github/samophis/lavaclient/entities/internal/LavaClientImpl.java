@@ -11,6 +11,8 @@ import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
@@ -22,6 +24,7 @@ import java.util.List;
 @Setter
 @Accessors(fluent = true)
 public class LavaClientImpl implements LavaClient {
+	private static final Logger LOGGER = LoggerFactory.getLogger(LavaClientImpl.class);
 	private final Vertx vertx;
 	private final List<AudioNode> nodes;
 	private final TLongObjectHashMap<LavaPlayer> players;
@@ -108,5 +111,53 @@ public class LavaClientImpl implements LavaClient {
 			throw new IllegalArgumentException("negative guild id!");
 		}
 		return players.get(guildId);
+	}
+
+	@Nonnull
+	@Override
+	public AudioNode bestNode() {
+		var currentPenalty = Integer.MAX_VALUE - 1;
+		var node = (AudioNode) null;
+		for (final var nd : nodes) {
+			if (!nd.available()) {
+				continue;
+			}
+			final var penalty = nd.loadBalancer().updatePenalties().totalPenalty();
+			if (penalty < currentPenalty) {
+				currentPenalty = penalty;
+				node = nd;
+			}
+		}
+		if (node == null) {
+			LOGGER.warn("no available nodes could be found!");
+			throw new IllegalStateException("no available nodes could be found!");
+		}
+		return node;
+	}
+
+	@Override
+	public void addNode(@Nonnull final AudioNode node) {
+		nodes.add(node);
+		vertx.deployVerticle((AudioNodeImpl) node, _result -> node.openConnection());
+	}
+
+	@Override
+	public void removeNode(@Nonnull final String baseUrl) {
+		final var node = (AudioNodeImpl) node(baseUrl);
+		if (node == null) {
+			return;
+		}
+		vertx.undeploy(node.deploymentID());
+		nodes.remove(node);
+	}
+
+	@Override
+	public void shutdown() {
+		nodes.forEach(node -> {
+			final var impl = (AudioNodeImpl) node;
+			vertx.undeploy(impl.deploymentID());
+			nodes.remove(node);
+		});
+		vertx.close();
 	}
 }
