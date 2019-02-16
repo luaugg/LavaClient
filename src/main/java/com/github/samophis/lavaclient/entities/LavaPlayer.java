@@ -22,6 +22,10 @@ public interface LavaPlayer {
     LavaClient client();
 
     @CheckReturnValue
+    @Nonnull
+    PlayerState state();
+
+    @CheckReturnValue
     @Nonnegative
     long guildId();
 
@@ -40,35 +44,20 @@ public interface LavaPlayer {
     @CheckReturnValue
     boolean paused();
 
-    @CheckReturnValue
-    @Nonnull
-    LavaPlayer stop();
+    void stop();
 
-	@CheckReturnValue
-	@Nonnull
-	LavaPlayer pause();
+	void pause();
 
-	@CheckReturnValue
-	@Nonnull
-	LavaPlayer resume();
+	void resume();
 
-	@CheckReturnValue
-	@Nonnull
-	LavaPlayer destroy();
+	void destroy();
 
-	@CheckReturnValue
-	@Nonnull
-	LavaPlayer seek(@Nonnegative final long position);
+	void seek(@Nonnegative final long position);
 
-	@CheckReturnValue
-	@Nonnull
-	LavaPlayer volume(@Nonnegative final int volume);
+	void volume(@Nonnegative final int volume);
 
-	@CheckReturnValue
-	@Nonnull
-	LavaPlayer connect(@Nonnull final AudioNode node);
+	void connect(@Nonnull final AudioNode node);
 
-	@CheckReturnValue
-	@Nonnull
-	LavaPlayer initialize(@Nonnull final String session_id, @Nonnull final String voice_token, @Nonnull final String endpoint);
+	void initialize(@Nonnull final String sessionId, @Nonnull final String voiceToken,
+	                @Nonnull final String endpoint);
 }

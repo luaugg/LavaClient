@@ -11,6 +11,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.json.JsonObject;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -36,7 +37,7 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 
 	private final String controlAddress;
 	private final String recvAddress;
-	private final String sendAddress;
+	@Getter(AccessLevel.PACKAGE) private final String sendAddress;
 
 	@Setter @Getter private Statistics statistics;
 	private HttpClient httpClient;
@@ -128,14 +129,18 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 				if (socket == null) {
 					throw new IllegalStateException("socket not created yet!");
 				}
-				client.players()
-				      .parallelStream()
-				      .filter(player -> this.equals(player.connectedNode()))
-				      .forEach(player -> {
-				      	client.removePlayer(player.guildId());
-				      	// todo load balancing!!!!!!
-				      });
-
+				try {
+					final var best = client.bestNode();
+					client.players()
+					      .parallelStream()
+					      .filter(player -> this.equals(player.connectedNode()))
+					      .forEach(player -> player.connect(best));
+				} catch (final IllegalStateException exc) {
+					client.players()
+					      .parallelStream()
+					      .filter(player -> this.equals(player.connectedNode()))
+					      .forEach(LavaPlayer::destroy);
+				}
 
 				socket.closeHandler(_vd -> {
 					available = false;

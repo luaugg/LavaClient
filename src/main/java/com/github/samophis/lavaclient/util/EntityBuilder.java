@@ -49,8 +49,8 @@ public class EntityBuilder {
 	}
 
 	public static JsonObject createVoiceUpdatePayload(@Nonnull final String guildId, @Nonnull final String sessionId,
-	                                                  @Nonnull final String endpoint,
-	                                                  @Nonnull final String voiceToken) {
+	                                                  @Nonnull final String voiceToken,
+	                                                  @Nonnull final String endpoint) {
 		return new JsonObject()
 				.put("guildId", guildId)
 				.put("sessionId", sessionId)

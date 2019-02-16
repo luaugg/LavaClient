@@ -3,12 +3,18 @@ package com.github.samophis.lavaclient.entities.internal;
 import com.github.samophis.lavaclient.entities.AudioNode;
 import com.github.samophis.lavaclient.entities.LavaClient;
 import com.github.samophis.lavaclient.entities.LavaPlayer;
+import com.github.samophis.lavaclient.entities.PlayerState;
+import com.github.samophis.lavaclient.util.EntityBuilder;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 
 @Getter
@@ -16,54 +22,111 @@ import javax.annotation.Nonnull;
 @Accessors(fluent = true)
 @RequiredArgsConstructor
 public class LavaPlayerImpl implements LavaPlayer {
+	private static final Logger LOGGER = LoggerFactory.getLogger(LavaPlayerImpl.class);
 	private final LavaClient client;
 	private final long guildId;
 	private long timestamp;
 	private long position;
 	private int volume;
 	private boolean paused;
+	private PlayerState state;
 	private AudioTrack playingTrack;
-	private AudioNode connectedNode;
+	private AudioNodeImpl connectedNode;
+	private String guildIdString;
 
-	@Nonnull
 	@Override
-	public LavaPlayer stop() {
-		return this;
+	public void stop() {
+		if (playingTrack == null) {
+			LOGGER.warn("no track playing during an attempt to stop! guild id: {}", guildId);
+			throw new IllegalStateException("can't stop a track which doesn't exist!");
+		}
+		final var stop = EntityBuilder.createStopPayload(guildIdAsString());
+		send(stop);
 	}
 
-	@Nonnull
 	@Override
-	public LavaPlayer pause() {
-		return this;
+	public void pause() {
+		if (paused) {
+			LOGGER.warn("already paused! guild id: {}", guildId);
+			throw new IllegalStateException("already paused!");
+		}
+		final var pause = EntityBuilder.createPausePayload(guildIdAsString(), true);
+		send(pause);
 	}
 
-	@Nonnull
 	@Override
-	public LavaPlayer resume() {
-		return this;
+	public void resume() {
+		if (!paused) {
+			LOGGER.warn("already resumed! guild id: {}", guildId);
+			throw new IllegalStateException("already resumed!");
+		}
+		final var resume = EntityBuilder.createPausePayload(guildIdAsString(), false);
+		send(resume);
 	}
 
-	@Nonnull
 	@Override
-	public LavaPlayer destroy() {
-		return this;
+	public void destroy() {
+		if (state == PlayerState.DESTROYED) {
+			LOGGER.warn("already destroyed! guild id: {}", guildId);
+			throw new IllegalStateException("already destroyed!");
+		}
+		state = PlayerState.DESTROYED;
+		final var destroyed = EntityBuilder.createDestroyPayload(guildIdAsString());
+		send(destroyed);
 	}
 
-	@Nonnull
 	@Override
-	public LavaPlayer seek(final long position) {
-		return this;
+	public void seek(@Nonnegative final long position) {
+		if (playingTrack == null) {
+			LOGGER.warn("no track is playing, seek requested! guild id: {}", guildId);
+			throw new IllegalArgumentException("can't seek when no track is playing!");
+		}
+		if (position < 0) {
+			LOGGER.warn("position is negative, not allowed! guild id: {}", guildId);
+			throw new IllegalArgumentException("negative position!");
+		}
+		final var seek = EntityBuilder.createSeekPayload(guildIdAsString(), position);
+		send(seek);
 	}
 
-	@Nonnull
 	@Override
-	public LavaPlayer connect(@Nonnull final AudioNode node) {
-		return this;
+	public void connect(@Nonnull final AudioNode node) {
+		if (connectedNode == null) {
+			node.openConnection(() -> {
+				connectedNode = (AudioNodeImpl) node;
+				state = PlayerState.CONNECTED;
+			});
+			return;
+		}
+		if (state == PlayerState.INITIALIZED) {
+			destroy();
+		}
+		connectedNode.closeConnection(() -> node.openConnection(() -> {
+			connectedNode = (AudioNodeImpl) node;
+			state = PlayerState.CONNECTED;
+		}));
 	}
 
-	@Nonnull
 	@Override
-	public LavaPlayer initialize(@Nonnull final String session_id, @Nonnull final String voice_token, @Nonnull final String endpoint) {
-		return this;
+	public void initialize(@Nonnull final String sessionId, @Nonnull final String voiceToken,
+	                       @Nonnull final String endpoint) {
+		if (state == PlayerState.INITIALIZED) {
+			LOGGER.warn("player already initialized! guild id: {}", guildId);
+			throw new IllegalStateException("player already initialized!");
+		}
+		state = PlayerState.INITIALIZED;
+		final var init = EntityBuilder.createVoiceUpdatePayload(guildIdAsString(), sessionId, voiceToken, endpoint);
+		send(init);
+	}
+
+	private String guildIdAsString() {
+		if (guildIdString == null) {
+			guildIdString = String.valueOf(guildId);
+		}
+		return guildIdString;
+	}
+
+	private void send(@Nonnull final JsonObject payload) {
+		client.vertx().eventBus().publish(connectedNode.sendAddress(), payload);
 	}
 }
