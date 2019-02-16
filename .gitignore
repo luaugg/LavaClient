@@ -1,4 +1,7 @@
-.idea/
+.idea/*.xml
+.idea/modules
+.idea/dictionaries
 .gradle/
 build/
-LavaClient.iml
+# while v4 is being finished
+docs/

@@ -1,15 +1,16 @@
 plugins {
     id 'java'
+    id 'maven' // fuck jitpack.
     id 'maven-publish'
-    id 'com.jfrog.bintray' version '1.8.3'
+    id 'com.jfrog.bintray' version '1.8.4'
     id 'idea'
     id 'com.github.johnrengelman.shadow' version '2.0.4'
-    id "com.github.ben-manes.versions" version '0.20.0'
+    id 'com.github.ben-manes.versions' version '0.20.0'
 }
 
 group 'com.github.samophis'
-description 'Fast client implementation for Lavalink.'
-version '3.0.3'
+description 'A lightweight, fast, library-independent client implementation for Lavalink v3.'
+version '4.0.0'
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
@@ -108,10 +109,9 @@ javadoc {
     options.author()
     options.encoding = 'UTF-8'
 
-    exclude('samophis/lavalink/client/entities/builders')
-    exclude('samophis/lavalink/client/entities/events')
-    exclude('samophis/lavalink/client/entities/internal')
-    exclude('samophis/lavalink/client/entities/messages')
+    exclude('com/github/samophis/lavaclient/entities/builders')
+    exclude('com/github/samophis/lavaclient/entities/events')
+    exclude('com/github/samophis/lavaclient/entities/internal')
 }
 
 artifacts {
@@ -124,32 +124,24 @@ repositories {
 }
 
 ext {
-    wsVersion = '2.5'
-    jacksonVersion = '2.9.6'
-    jsoniterVersion = '0.9.22'
-    javassistVersion = '3.12.1.GA'
-    httpAsyncClientVersion = '4.1.3'
-    fastutilVersion = '8.2.1'
-    slf4jApiVersion = '1.7.25'
+    vertxVersion = '3.6.3'
     findbugsSourcesVersion = '3.0.2'
-    lavaplayerSourcesVersion = '1.3.6'
-    caffeineVersion = '2.6.2'
+    lavaplayerSourcesVersion = '1.3.10'
+    slf4jVersion = '1.7.25'
+    troveVersion = '3.0.3'
+    lombokVersion = '1.18.4'
 }
 
 dependencies {
-    compile group: 'com.neovisionaries', name: 'nv-websocket-client', version: wsVersion
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
-    compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: jacksonVersion
-    compile group: 'com.jsoniter', name: 'jsoniter', version: jsoniterVersion
-    compile group: 'javassist', name: 'javassist', version: javassistVersion
-    compile group: 'org.apache.httpcomponents', name: 'httpasyncclient', version: httpAsyncClientVersion
-    compile group: 'it.unimi.dsi', name: 'fastutil', version: fastutilVersion
-    compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jApiVersion
-    compile group: 'com.github.ben-manes.caffeine', name: 'caffeine', version: caffeineVersion
+    compile group: 'io.vertx', name: 'vertx-core', version: vertxVersion
+    compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
+    compile group: 'net.sf.trove4j', name: 'trove4j', version: troveVersion
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: lombokVersion
     compileOnly group: 'com.google.code.findbugs', name: 'jsr305', version: findbugsSourcesVersion
     compileOnly group: 'com.sedmelluq', name: 'lavaplayer', version: lavaplayerSourcesVersion
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+
