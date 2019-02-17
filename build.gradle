@@ -17,21 +17,16 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
 }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-// Credit to natanbc for this -- I'm shit at Gradle
-
-task updateDocs(type: Copy) {
-    dependsOn javadoc
-    from "${buildDir}/docs/javadoc"
-    into "docs"
-}
-
 task wrapper(type: Wrapper) {
     gradleVersion = '4.8.1'
+}
+
+// Credit to Vampire
+task downloadDependencies() {
+    description 'Download all dependencies to the Gradle cache'
+    doLast {
+        configurations.findAll { it.canBeResolved }.files
+    }
 }
 
 shadowJar {
@@ -64,7 +59,6 @@ publishing {
             groupId group
             artifactId 'LavaClient'
             version version
-            artifact javadocJar
             artifact sourcesJar
         }
     }
@@ -73,15 +67,12 @@ publishing {
 build {
     dependsOn clean
     dependsOn jar
-    dependsOn javadocJar
     dependsOn sourcesJar
     dependsOn shadowJar
-    dependsOn updateDocs
     dependsOn test
 
     jar.mustRunAfter clean
-    javadocJar.mustRunAfter jar
-    sourcesJar.mustRunAfter javadocJar
+    sourcesJar.mustRunAfter jar
     shadowJar.mustRunAfter sourcesJar
 }
 
@@ -104,19 +95,8 @@ bintrayUpload {
     onlyIf { !getProjectProperty("bintrayApiKey").empty }
 }
 
-javadoc {
-    options.memberLevel = JavadocMemberLevel.PUBLIC
-    options.author()
-    options.encoding = 'UTF-8'
-
-    exclude('com/github/samophis/lavaclient/entities/builders')
-    exclude('com/github/samophis/lavaclient/entities/events')
-    exclude('com/github/samophis/lavaclient/entities/internal')
-}
-
 artifacts {
     archives sourcesJar
-    archives javadocJar
 }
 
 repositories {
