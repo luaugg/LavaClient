@@ -30,5 +30,5 @@ import javax.annotation.Nonnull;
 public class PlayerResumeEvent implements LavalinkEvent {
 	private final AudioNode node;
 	private final LavaPlayer player;
-	private final EventType type = EventType.PLAYER_RESUME_EVENT;
+	private final EventType<PlayerResumeEvent> type = EventType.PLAYER_RESUME_EVENT;
 }

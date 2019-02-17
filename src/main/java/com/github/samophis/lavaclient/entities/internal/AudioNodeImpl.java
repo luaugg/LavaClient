@@ -37,6 +37,7 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.function.Consumer;
 
 @Accessors(fluent = true)
 public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
@@ -303,6 +304,14 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 	@Nonnull
 	private String eventSendMessageAddress() {
 		return String.format("lavaclient:%s:event-send", baseUrl);
+	}
+
+	@Override
+	public void on(@Nonnull final Consumer<LavalinkEvent> handler) {
+		vertx.eventBus().consumer(recvAddress, msg -> {
+			final var event = (LavalinkEvent) msg.body();
+			handler.accept(event);
+		});
 	}
 
 	private class ControlMessage<V> {

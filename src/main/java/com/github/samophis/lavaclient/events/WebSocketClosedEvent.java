@@ -29,7 +29,7 @@ import javax.annotation.Nonnull;
 @RequiredArgsConstructor
 public class WebSocketClosedEvent implements LavalinkEvent {
 	private final AudioNode node;
-	private final EventType type = EventType.WEBSOCKET_CLOSED_EVENT;
+	private final EventType<WebSocketClosedEvent> type = EventType.WEB_SOCKET_CLOSED_EVENT;
 	private final String reason;
 
 	@Getter(onMethod_ = @CheckReturnValue)

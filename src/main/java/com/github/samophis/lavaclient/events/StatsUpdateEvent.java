@@ -30,5 +30,5 @@ import javax.annotation.Nonnull;
 public class StatsUpdateEvent implements LavalinkEvent {
 	private final AudioNode node;
 	private final Statistics statistics;
-	private final EventType type = EventType.STATS_UPDATE_EVENT;
+	private final EventType<StatsUpdateEvent> type = EventType.STATS_UPDATE_EVENT;
 }

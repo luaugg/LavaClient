@@ -33,5 +33,5 @@ public class TrackStuckEvent implements LavalinkTrackEvent {
 	private final AudioNode node;
 	private final LavaPlayer player;
 	private final long thresholdMs;
-	private final EventType type = EventType.TRACK_STUCK_EVENT;
+	private final EventType<TrackStuckEvent> type = EventType.TRACK_STUCK_EVENT;
 }

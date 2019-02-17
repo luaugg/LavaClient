@@ -30,5 +30,5 @@ import javax.annotation.Nonnull;
 public class PlayerPauseEvent implements LavalinkEvent {
 	private final AudioNode node;
 	private final LavaPlayer player;
-	private final EventType type = EventType.PLAYER_PAUSE_EVENT;
+	private final EventType<PlayerPauseEvent> type = EventType.PLAYER_PAUSE_EVENT;
 }

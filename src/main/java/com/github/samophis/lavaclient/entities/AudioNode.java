@@ -15,10 +15,14 @@
  */
 package com.github.samophis.lavaclient.entities;
 
+import com.github.samophis.lavaclient.events.EventType;
+import com.github.samophis.lavaclient.events.LavalinkEvent;
+
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.function.Consumer;
 
 @SuppressWarnings("unused")
 public interface AudioNode {
@@ -64,4 +68,15 @@ public interface AudioNode {
 	void closeConnection();
 
 	void closeConnection(@Nonnull final Runnable callback);
+
+	@SuppressWarnings("unchecked")
+	default <T extends LavalinkEvent> void on(@Nonnull final EventType<T> type, @Nonnull final Consumer<T> handler) {
+		on(event -> {
+			if (event.type().equals(type)) {
+				handler.accept((T) event);
+			}
+		});
+	}
+
+	void on(@Nonnull final Consumer<LavalinkEvent> handler);
 }

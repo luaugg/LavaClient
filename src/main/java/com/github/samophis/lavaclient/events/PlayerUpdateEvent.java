@@ -39,5 +39,5 @@ public class PlayerUpdateEvent implements LavalinkEvent {
 	private final long position;
 
 	@Getter
-	private final EventType type = EventType.PLAYER_UPDATE_EVENT;
+	private final EventType<PlayerUpdateEvent> type = EventType.PLAYER_UPDATE_EVENT;
 }

@@ -32,5 +32,5 @@ public class TrackStartEvent implements LavalinkTrackEvent {
 	private final AudioTrack track;
 	private final AudioNode node;
 	private final LavaPlayer player;
-	private final EventType type = EventType.TRACK_START_EVENT;
+	private final EventType<TrackStartEvent> type = EventType.TRACK_START_EVENT;
 }

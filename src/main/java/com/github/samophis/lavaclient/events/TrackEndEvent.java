@@ -34,5 +34,5 @@ public class TrackEndEvent implements LavalinkTrackEvent {
 	private final AudioNode node;
 	private final LavaPlayer player;
 	private final AudioTrackEndReason reason;
-	private final EventType type = EventType.TRACK_END_EVENT;
+	private final EventType<TrackEndEvent> type = EventType.TRACK_END_EVENT;
 }

@@ -34,5 +34,5 @@ public class TrackExceptionEvent implements LavalinkTrackEvent {
 	private final AudioNode node;
 	private final LavaPlayer player;
 	private final RemoteTrackException exception;
-	private final EventType type = EventType.TRACK_EXCEPTION_EVENT;
+	private final EventType<TrackExceptionEvent> type = EventType.TRACK_EXCEPTION_EVENT;
 }
