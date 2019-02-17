@@ -25,7 +25,7 @@ public class AudioLoadResultImpl implements AudioLoadResult {
 	private final String playlistName;
 
 	@Getter(onMethod_ = {@CheckReturnValue, @Nullable, @Nonnegative})
-	private final Long selectedTrack;
+	private final Integer selectedTrack;
 
 	@Getter(onMethod_ = @CheckReturnValue)
 	private final boolean playlist;

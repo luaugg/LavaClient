@@ -15,10 +15,8 @@
  */
 package com.github.samophis.lavaclient.entities.internal;
 
-import com.github.samophis.lavaclient.entities.AudioNode;
-import com.github.samophis.lavaclient.entities.LavaClient;
-import com.github.samophis.lavaclient.entities.LavaPlayer;
-import com.github.samophis.lavaclient.entities.PlayerState;
+import com.github.samophis.lavaclient.entities.*;
+import com.github.samophis.lavaclient.util.AudioTrackUtil;
 import com.github.samophis.lavaclient.util.EntityBuilder;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import io.vertx.core.json.JsonObject;
@@ -26,11 +24,16 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import me.escoffier.vertx.completablefuture.VertxCompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -38,7 +41,7 @@ import javax.annotation.Nonnull;
 @RequiredArgsConstructor
 public class LavaPlayerImpl implements LavaPlayer {
 	private static final Logger LOGGER = LoggerFactory.getLogger(LavaPlayerImpl.class);
-	private final LavaClient client;
+	private final LavaClientImpl client;
 	private final long guildId;
 	private long timestamp;
 	private long position;
@@ -48,6 +51,40 @@ public class LavaPlayerImpl implements LavaPlayer {
 	private AudioTrack playingTrack;
 	private AudioNodeImpl connectedNode;
 	private String guildIdString;
+
+	@Nonnull
+	@SuppressWarnings("deprecation") // we're not using vert.x 4, no need to worry on 3.6.2
+	@Override
+	public CompletionStage<AudioLoadResult> loadTracksAsync(@Nonnull final String identifier) {
+		final var future = new VertxCompletableFuture<AudioLoadResult>(client.vertx());
+		final var request = client.httpClient().get(String.format("%s/loadtracks?identifier=%s", connectedNode.restUrl(),
+				URLEncoder.encode(identifier, StandardCharsets.UTF_8)), response -> {
+			response.bodyHandler(buffer -> {
+				final var json = buffer.toJsonObject();
+				final var type = LoadType.from(json.getString("loadType"));
+				final var playlistInfo = json.getJsonObject("playlistInfo");
+				final var isPlaylist = !playlistInfo.isEmpty();
+				final var rawTracks = json.getJsonArray("tracks");
+				final var tracks = rawTracks
+						.stream()
+						.map(obj -> AudioTrackUtil.fromString(((JsonObject) obj).getString("track")))
+						.collect(Collectors.toList());
+				var playlistName = (String) null;
+				var selectedTrack = (Integer) null;
+
+				if (isPlaylist) {
+					playlistName = playlistInfo.getString("name");
+					selectedTrack = playlistInfo.getInteger("selectedTrack");
+				}
+				future.complete(new AudioLoadResultImpl(tracks, type, playlistName, selectedTrack, isPlaylist));
+			});
+			response.request().end();
+		});
+		if (!connectedNode.password().isEmpty()) {
+			request.putHeader("Authorization", connectedNode.password());
+		}
+		return future;
+	}
 
 	@Override
 	public void volume(@Nonnegative final int volume) {

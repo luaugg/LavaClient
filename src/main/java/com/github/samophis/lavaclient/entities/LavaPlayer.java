@@ -22,6 +22,7 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.concurrent.CompletionStage;
 
 @SuppressWarnings("unused")
 public interface LavaPlayer {
@@ -59,6 +60,10 @@ public interface LavaPlayer {
 
     @CheckReturnValue
     boolean paused();
+
+	@Nonnull
+	@CheckReturnValue
+	CompletionStage<AudioLoadResult> loadTracksAsync(@Nonnull final String identifier);
 
     void play(@Nonnull final String trackData, @Nonnegative final long startTime, @Nonnegative final long endTime,
               final boolean noReplace);

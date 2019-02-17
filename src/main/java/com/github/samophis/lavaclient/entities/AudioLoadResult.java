@@ -31,5 +31,5 @@ public interface AudioLoadResult {
 	@CheckReturnValue
 	@Nullable
 	@Nonnegative
-	Long selectedTrack();
+	Integer selectedTrack();
 }

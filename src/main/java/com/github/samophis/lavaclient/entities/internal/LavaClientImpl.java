@@ -22,6 +22,7 @@ import com.github.samophis.lavaclient.events.*;
 import com.github.samophis.lavaclient.util.JsonPojoCodec;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClient;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import lombok.Setter;
@@ -45,6 +46,7 @@ public class LavaClientImpl implements LavaClient {
 	private final TLongObjectHashMap<LavaPlayer> players;
 	private final long userId;
 	private final int numShards;
+	private final HttpClient httpClient;
 
 	public LavaClientImpl(final Vertx vertx, final List<AudioNode> nodes,
 	                      final TLongObjectHashMap<LavaPlayer> players, final long userId, final int numShards) {
@@ -53,6 +55,7 @@ public class LavaClientImpl implements LavaClient {
 		this.players = players;
 		this.userId = userId;
 		this.numShards = numShards;
+		httpClient = vertx.createHttpClient();
 		register(JsonObject.class);
 		register(TrackStartEvent.class);
 		register(TrackEndEvent.class);

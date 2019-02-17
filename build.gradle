@@ -125,12 +125,14 @@ ext {
     slf4jVersion = '1.7.25'
     troveVersion = '3.0.3'
     lombokVersion = '1.18.4'
+    vertxCompletableFuturesVersion = '0.1.2'
 }
 
 dependencies {
     compile group: 'io.vertx', name: 'vertx-core', version: vertxVersion
     compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
     compile group: 'net.sf.trove4j', name: 'trove4j', version: troveVersion
+    compile group: 'me.escoffier.vertx', name: 'vertx-completable-future', version: vertxCompletableFuturesVersion
     compileOnly group: 'org.projectlombok', name: 'lombok', version: lombokVersion
     compileOnly group: 'com.google.code.findbugs', name: 'jsr305', version: findbugsSourcesVersion
     compileOnly group: 'com.sedmelluq', name: 'lavaplayer', version: lavaplayerSourcesVersion

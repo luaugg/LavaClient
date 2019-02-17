@@ -56,8 +56,6 @@ public interface LavaClient {
     @Nonnull
 	LavaPlayer removePlayer(@Nonnegative final long guildId, final boolean shouldDestroy);
 
-
-
 	@Nonnegative
 	@CheckReturnValue
 	long userId();
