@@ -1,8 +1,8 @@
 version: 2
 jobs:
   build:
-    machine:
-      enabled: true
+    docker:
+      image: circleci/openjdk:11.0.1-jdk
     steps:
     - checkout
     # copied from Vampire (https://discuss.circleci.com/t/recommended-dependencies-caching-for-a-gradle-setup-is-wrong/20712/3)
