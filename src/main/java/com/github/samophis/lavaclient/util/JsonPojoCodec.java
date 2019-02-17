@@ -18,7 +18,7 @@ Credit to catnip development team: https://github.com/mewna/catnip/blob/master/s
 @Accessors(fluent = true)
 public class JsonPojoCodec<T> implements MessageCodec<T, T> {
 	private final Class<T> type;
-	private final int systemCodecID = -1;
+	private final byte systemCodecID = -1;
 	private final String name = "JsonPojoCodec";
 
 	@Override

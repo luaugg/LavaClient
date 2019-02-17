@@ -29,9 +29,6 @@ public class EntityBuilder {
 	}
 
 	public static JsonObject createSeekPayload(@Nonnull final String guildId, @Nonnegative final long position) {
-		if (position < 0) {
-			throw new IllegalArgumentException("position is negative!");
-		}
 		return new JsonObject()
 				.put("guildId", guildId)
 				.put("position", position)
@@ -39,9 +36,6 @@ public class EntityBuilder {
 	}
 
 	public static JsonObject createVolumePayload(@Nonnull final String guildId, @Nonnegative final int volume) {
-		if (volume < 0 || volume > 1000) {
-			throw new IllegalArgumentException("volume is out of bounds! (0 min, 1000 max)");
-		}
 		return new JsonObject()
 				.put("guildId", guildId)
 				.put("volume", volume)

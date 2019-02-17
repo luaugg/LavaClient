@@ -1,5 +1,6 @@
 package com.github.samophis.lavaclient.entities;
 
+import com.github.samophis.lavaclient.util.AudioTrackUtil;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import javax.annotation.CheckReturnValue;
@@ -44,6 +45,9 @@ public interface LavaPlayer {
     @CheckReturnValue
     boolean paused();
 
+    void play(@Nonnull final String trackData, @Nonnegative final long startTime, @Nonnegative final long endTime,
+              final boolean noReplace);
+
     void stop();
 
 	void pause();
@@ -60,4 +64,26 @@ public interface LavaPlayer {
 
 	void initialize(@Nonnull final String sessionId, @Nonnull final String voiceToken,
 	                @Nonnull final String endpoint);
+
+	default void play(@Nonnull final AudioTrack track, @Nonnegative final long startTime,
+	                  @Nonnegative final long endTime, final boolean noReplace) {
+		play(AudioTrackUtil.fromTrack(track), startTime, endTime, noReplace);
+	}
+
+	default void play(@Nonnull final AudioTrack track, @Nonnegative final long startTime,
+	                  @Nonnegative final long endTime) {
+		play(track, startTime, endTime, false);
+	}
+
+	default void play(@Nonnull final AudioTrack track, @Nonnegative final long startTime) {
+		play(track, startTime, track.getDuration());
+	}
+
+	default void play(@Nonnull final AudioTrack track, final boolean noReplace) {
+		play(track, 0, track.getDuration(), noReplace);
+	}
+
+	default void play(@Nonnull final AudioTrack track) {
+		play(track, false);
+	}
 }

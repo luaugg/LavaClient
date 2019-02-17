@@ -35,9 +35,31 @@ public class LavaPlayerImpl implements LavaPlayer {
 	private String guildIdString;
 
 	@Override
+	public void volume(@Nonnegative final int volume) {
+		if (volume < 0 || volume > 1000) {
+			LOGGER.warn("out of bounds volume: {}, guild id: {}", volume, guildIdAsString());
+			throw new IllegalArgumentException("volume out of bounds!");
+		}
+		final var volumeUpdate = EntityBuilder.createVolumePayload(guildIdAsString(), volume);
+		send(volumeUpdate);
+	}
+
+	@Override
+	public void play(@Nonnull final String trackData, @Nonnegative final long startTime,
+	                 @Nonnegative final long endTime, final boolean noReplace) {
+			if (startTime < 0 || startTime >= endTime) {
+				LOGGER.warn("startTime out of bounds: {}, guild id: {}", startTime, guildIdAsString());
+				throw new IllegalArgumentException("startTime out of bounds!");
+			}
+			final var play = EntityBuilder.createPlayPayload(guildIdAsString(), trackData, String.valueOf(startTime),
+					String.valueOf(endTime), noReplace);
+			send(play);
+	}
+
+	@Override
 	public void stop() {
 		if (playingTrack == null) {
-			LOGGER.warn("no track playing during an attempt to stop! guild id: {}", guildId);
+			LOGGER.warn("no track playing during an attempt to stop! guild id: {}", guildIdAsString());
 			throw new IllegalStateException("can't stop a track which doesn't exist!");
 		}
 		final var stop = EntityBuilder.createStopPayload(guildIdAsString());
@@ -47,7 +69,7 @@ public class LavaPlayerImpl implements LavaPlayer {
 	@Override
 	public void pause() {
 		if (paused) {
-			LOGGER.warn("already paused! guild id: {}", guildId);
+			LOGGER.warn("already paused! guild id: {}", guildIdAsString());
 			throw new IllegalStateException("already paused!");
 		}
 		final var pause = EntityBuilder.createPausePayload(guildIdAsString(), true);
@@ -57,7 +79,7 @@ public class LavaPlayerImpl implements LavaPlayer {
 	@Override
 	public void resume() {
 		if (!paused) {
-			LOGGER.warn("already resumed! guild id: {}", guildId);
+			LOGGER.warn("already resumed! guild id: {}", guildIdAsString());
 			throw new IllegalStateException("already resumed!");
 		}
 		final var resume = EntityBuilder.createPausePayload(guildIdAsString(), false);
@@ -67,7 +89,7 @@ public class LavaPlayerImpl implements LavaPlayer {
 	@Override
 	public void destroy() {
 		if (state == PlayerState.DESTROYED) {
-			LOGGER.warn("already destroyed! guild id: {}", guildId);
+			LOGGER.warn("already destroyed! guild id: {}", guildIdAsString());
 			throw new IllegalStateException("already destroyed!");
 		}
 		state = PlayerState.DESTROYED;
@@ -78,11 +100,11 @@ public class LavaPlayerImpl implements LavaPlayer {
 	@Override
 	public void seek(@Nonnegative final long position) {
 		if (playingTrack == null) {
-			LOGGER.warn("no track is playing, seek requested! guild id: {}", guildId);
+			LOGGER.warn("no track is playing, seek requested! guild id: {}", guildIdAsString());
 			throw new IllegalArgumentException("can't seek when no track is playing!");
 		}
 		if (position < 0) {
-			LOGGER.warn("position is negative, not allowed! guild id: {}", guildId);
+			LOGGER.warn("position is negative, not allowed! guild id: {}", guildIdAsString());
 			throw new IllegalArgumentException("negative position!");
 		}
 		final var seek = EntityBuilder.createSeekPayload(guildIdAsString(), position);
@@ -111,7 +133,7 @@ public class LavaPlayerImpl implements LavaPlayer {
 	public void initialize(@Nonnull final String sessionId, @Nonnull final String voiceToken,
 	                       @Nonnull final String endpoint) {
 		if (state == PlayerState.INITIALIZED) {
-			LOGGER.warn("player already initialized! guild id: {}", guildId);
+			LOGGER.warn("player already initialized! guild id: {}", guildIdAsString());
 			throw new IllegalStateException("player already initialized!");
 		}
 		state = PlayerState.INITIALIZED;
