@@ -62,6 +62,7 @@ public class LavaClientImpl implements LavaClient {
 		register(PlayerResumeEvent.class);
 		register(PlayerUpdateEvent.class);
 		register(StatsUpdateEvent.class);
+		register(WebSocketClosedEvent.class);
 	}
 
 	private <T> void register(@Nonnull final Class<T> cls) {
