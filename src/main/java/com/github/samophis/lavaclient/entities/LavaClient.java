@@ -78,4 +78,8 @@ public interface LavaClient {
 	default LavaPlayer removePlayer(@Nonnegative final long guildId) {
 		return removePlayer(guildId, true);
 	}
+
+	@CheckReturnValue
+	@Nonnull
+	AudioNode nodeFrom(@Nonnull final AudioNodeOptions options);
 }

@@ -16,6 +16,7 @@
 package com.github.samophis.lavaclient.entities.internal;
 
 import com.github.samophis.lavaclient.entities.AudioNode;
+import com.github.samophis.lavaclient.entities.AudioNodeOptions;
 import com.github.samophis.lavaclient.entities.LavaClient;
 import com.github.samophis.lavaclient.entities.LavaPlayer;
 import com.github.samophis.lavaclient.events.*;
@@ -178,5 +179,23 @@ public class LavaClientImpl implements LavaClient {
 			nodes.remove(node);
 		});
 		vertx.close();
+	}
+
+	@Nonnull
+	@Override
+	public AudioNode nodeFrom(@Nonnull final AudioNodeOptions options) {
+		final var host = options.host();
+		if (host == null) {
+			throw new IllegalArgumentException("host/address is null!");
+		}
+		var password = options.host();
+		if (password == null) {
+			password = "";
+		}
+		final var port = options.port();
+		if (port <= 0) {
+			throw new IllegalArgumentException("port is smaller or equal to 0");
+		}
+		return new AudioNodeImpl(this, host, password, port);
 	}
 }
