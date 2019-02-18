@@ -23,6 +23,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.MultiMap;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.json.JsonObject;
@@ -37,6 +38,8 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 @Accessors(fluent = true)
@@ -58,8 +61,9 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 	@Setter @Getter private Statistics statistics;
 	private HttpClient httpClient;
 	private WebSocket socket;
+	private List<MessageConsumer<?>> consumers;
 
-	public AudioNodeImpl(@Nonnull final LavaClient client, @Nonnull final String baseUrl,
+	AudioNodeImpl(@Nonnull final LavaClient client, @Nonnull final String baseUrl,
 	                     @Nonnull final String password, @Nonnegative final int port) {
 		this.client = client;
 		this.baseUrl = baseUrl;
@@ -110,14 +114,18 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 	@Override
 	public void start() {
 		final var bus = vertx.eventBus();
-		bus.consumer(controlAddress, this::handleControlMessage);
-		bus.consumer(sendAddress, this::handleSentEvent);
+		consumers = new ArrayList<>(2);
+		consumers.add(bus.consumer(controlAddress, this::handleControlMessage));
+		consumers.add(bus.consumer(sendAddress, this::handleSentEvent));
 		httpClient = vertx.createHttpClient();
 	}
 
 	@Override
-	public void stop() throws Exception {
-		super.stop();
+	public void stop() {
+		closeConnection();
+		httpClient.close();
+		httpClient = null;
+		consumers.forEach(MessageConsumer::unregister);
 	}
 
 	private void handleControlMessage(@Nonnull final Message<?> msg) {
@@ -139,7 +147,7 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 						onConnect.run();
 					}
 					socket.textMessageHandler(this::handleReceivedMessage);
-					}, err -> LOGGER.error("Error establishing a WebSocket connection! {}", err));
+				}, err -> LOGGER.error("Error establishing a WebSocket connection! {}", err));
 			case DISCONNECT:
 				final var onDisconnect = (Runnable) message.object;
 				if (socket == null) {
@@ -176,116 +184,125 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 		socket.writeTextMessage(msg.body().toString());
 	}
 
+	@CheckReturnValue
+	@Nonnull
+	private LavaPlayerImpl playerFromRawData(@Nonnull final JsonObject data) {
+		final var guildId = data.getString("guildId");
+		var player = (LavaPlayerImpl) client.player(Long.parseUnsignedLong(guildId));
+		if (player == null) {
+			LOGGER.warn("unknown player for guild id: {}", guildId);
+			throw new IllegalStateException("unknown player | guild id: " + guildId);
+		}
+		return player;
+	}
+
+	@CheckReturnValue
+	@Nonnull
+	private LavalinkEvent eventFromRawStats(@Nonnull final JsonObject stats) {
+		// objects
+		final var cpuObject = stats.getJsonObject("cpu");
+		final var memObject = stats.getJsonObject("memory");
+		final var frameObject = stats.getJsonObject("frameStats", null);
+		final var cpuCores = cpuObject.getInteger("cores");
+		// actual fields
+		final var players = stats.getInteger("players");
+		final var playingPlayers = stats.getInteger("playingPlayers");
+		final var systemLoad = cpuObject.getDouble("systemLoad");
+		final var lavalinkLoad = cpuObject.getDouble("lavalinkLoad");
+		final var uptime = stats.getLong("uptime");
+
+		final var freeMemory = memObject.getInteger("free");
+		final var allocatedMemory = memObject.getInteger("allocated");
+		final var usedMemory = memObject.getInteger("used");
+		final var reservableMemory = memObject.getInteger("reservable");
+
+		var sentFrames = (Long) null;
+		var nulledFrames = (Long) null;
+		var deficitFrames = (Long) null;
+		if (frameObject != null) {
+			sentFrames = frameObject.getLong("sent");
+			nulledFrames = frameObject.getLong("nulled");
+			deficitFrames = frameObject.getLong("deficit");
+		}
+		final var statistics = new StatisticsImpl()
+				.players(players)
+				.playingPlayers(playingPlayers)
+				.uptime(uptime)
+				.cpuCores(cpuCores)
+				.systemLoad(systemLoad)
+				.lavalinkLoad(lavalinkLoad)
+				.usedMemory(usedMemory)
+				.allocatedMemory(allocatedMemory)
+				.freeMemory(freeMemory)
+				.reservableMemory(reservableMemory)
+				.sentFrames(sentFrames)
+				.nulledFrames(nulledFrames)
+				.deficitFrames(deficitFrames);
+		return new StatsUpdateEvent(this, statistics);
+	}
+
+	@CheckReturnValue
+	@Nonnull
+	private LavalinkEvent eventFromRawPlayerUpdate(@Nonnull final JsonObject playerUpdate) {
+		final var player = playerFromRawData(playerUpdate);
+		final var state = playerUpdate.getJsonObject("state");
+		final var timestamp = state.getLong("timestamp");
+		final var position = state.getLong("position");
+		player.position(position);
+		player.timestamp(timestamp);
+		return new PlayerUpdateEvent(this, player, timestamp, position);
+	}
+
+	@CheckReturnValue
+	@Nonnull
+	private LavalinkEvent eventFromRawLavalinkEvent(@Nonnull final JsonObject lavalinkEvent) {
+		final var type = lavalinkEvent.getString("type");
+		switch (type) {
+			case "TrackEndEvent":
+				final var player1 = playerFromRawData(lavalinkEvent);
+				player1.playingTrack(null);
+				final var track1 = AudioTrackUtil.fromString(lavalinkEvent.getString("track"));
+				final var reason = AudioTrackEndReason.valueOf(lavalinkEvent.getString("reason"));
+				return new TrackEndEvent(track1, this, player1, reason);
+			case "TrackStuckEvent":
+				final var player2 = playerFromRawData(lavalinkEvent);
+				final var track2 = AudioTrackUtil.fromString(lavalinkEvent.getString("track"));
+				return new TrackStuckEvent(track2, this, player2, lavalinkEvent.getLong("thresholdMs"));
+			case "TrackExceptionEvent":
+				final var player3 = playerFromRawData(lavalinkEvent);
+				final var track3 = AudioTrackUtil.fromString(lavalinkEvent.getString("track"));
+				return new TrackExceptionEvent(track3, this, player3, new RemoteTrackException(track3, this,
+						player3, lavalinkEvent.getString("error")));
+			case "WebSocketClosedEvent":
+				final var player4 = playerFromRawData(lavalinkEvent);
+				player4.playingTrack(null); // probably safer to do this instead of maintaining old state
+				return new WebSocketClosedEvent(this, lavalinkEvent.getString("reason"), lavalinkEvent.getBoolean("byRemote"),
+						lavalinkEvent.getInteger("code"));
+			default:
+				LOGGER.warn("Unsupported Event Type: {}", type);
+				throw new UnsupportedOperationException(type);
+		}
+	}
+
 	private void handleReceivedMessage(@Nonnull final String msg) {
 		final var json = new JsonObject(msg);
-		final var guildId = json.getString("guildId", null);
-		var player = (LavaPlayerImpl) null;
-		if (guildId != null) {
-			player = (LavaPlayerImpl) client.player(Long.parseUnsignedLong(guildId));
-			if (player == null) {
-				LOGGER.warn("unknown player for guild id: {}", guildId);
-				throw new IllegalStateException("unknown player | guild id: " + guildId);
-			}
-		}
-
-		var event = (LavalinkEvent) null;
 		final var op = json.getString("op");
+		var event = (LavalinkEvent) null;
 		switch (op) {
-			case "playerUpdate":
-				if (player == null) {
-					throw new IllegalStateException("report this bug to the developer(s), player null for update");
-				}
-				final var state = json.getJsonObject("state");
-				final var timestamp = state.getLong("timestamp");
-				final var position = state.getLong("position");
-				player.position(position);
-				player.timestamp(timestamp);
-				event = new PlayerUpdateEvent(this, player, timestamp, position);
-				break;
 			case "stats":
-				// objects
-				final var cpuObject = json.getJsonObject("cpu");
-				final var memObject = json.getJsonObject("memory");
-				final var frameObject = json.getJsonObject("frameStats", null);
-				final var cpuCores = cpuObject.getInteger("cores");
-				// actual fields
-				final var players = json.getInteger("players");
-				final var playingPlayers = json.getInteger("playingPlayers");
-				final var systemLoad = cpuObject.getDouble("systemLoad");
-				final var lavalinkLoad = cpuObject.getDouble("lavalinkLoad");
-				final var uptime = json.getLong("uptime");
-
-				final var freeMemory = memObject.getInteger("free");
-				final var allocatedMemory = memObject.getInteger("allocated");
-				final var usedMemory = memObject.getInteger("used");
-				final var reservableMemory = memObject.getInteger("reservable");
-
-				var sentFrames = (Long) null;
-				var nulledFrames = (Long) null;
-				var deficitFrames = (Long) null;
-				if (frameObject != null) {
-					sentFrames = frameObject.getLong("sent");
-					nulledFrames = frameObject.getLong("nulled");
-					deficitFrames = frameObject.getLong("deficit");
-				}
-				final var stats = new StatisticsImpl()
-						.players(players)
-						.playingPlayers(playingPlayers)
-						.uptime(uptime)
-						.cpuCores(cpuCores)
-						.systemLoad(systemLoad)
-						.lavalinkLoad(lavalinkLoad)
-						.usedMemory(usedMemory)
-						.allocatedMemory(allocatedMemory)
-						.freeMemory(freeMemory)
-						.reservableMemory(reservableMemory)
-						.sentFrames(sentFrames)
-						.nulledFrames(nulledFrames)
-						.deficitFrames(deficitFrames);
-				statistics = stats;
-				event = new StatsUpdateEvent(this, stats);
+				event = eventFromRawStats(json);
+				break;
+			case "playerUpdate":
+				event = eventFromRawPlayerUpdate(json);
 				break;
 			case "event":
-				final var type = json.getString("type");
-				switch (type) {
-					case "TrackEndEvent":
-						if (player == null) {
-							throw new IllegalStateException("report to developers | player null for track end");
-						}
-						player.playingTrack(null);
-						final var track1 = AudioTrackUtil.fromString(json.getString("track"));
-						final var reason = AudioTrackEndReason.valueOf(json.getString("reason"));
-						event = new TrackEndEvent(track1, this, player, reason);
-					case "TrackStuckEvent":
-						if (player == null) {
-							throw new IllegalStateException("report to developers | player null for track end");
-						}
-						final var track2 = AudioTrackUtil.fromString(json.getString("track"));
-						event = new TrackStuckEvent(track2, this, player, json.getLong("thresholdMs"));
-					case "TrackExceptionEvent":
-						if (player == null) {
-							throw new IllegalStateException("report to developers | player null for track end");
-						}
-						final var track3 = AudioTrackUtil.fromString(json.getString("track"));
-						event = new TrackExceptionEvent(track3, this, player, new RemoteTrackException(track3, this,
-								player, json.getString("error")));
-					case "WebSocketClosedEvent":
-						if (player == null) {
-							throw new IllegalStateException("report to developers | player null for track end");
-						}
-						player.playingTrack(null); // probably safer to do this instead of maintaining old state
-						event = new WebSocketClosedEvent(this, json.getString("reason"), json.getBoolean("byRemote"),
-								json.getInteger("code"));
-					default:
-						LOGGER.warn("Unsupported Event Type: {}", type);
-				}
+				event = eventFromRawLavalinkEvent(json);
 				break;
 			default:
-				LOGGER.warn("Unsupported Incoming Message Type: {}", op);
+				LOGGER.warn("unsupported lavalink opcode! {}", op);
+				throw new UnsupportedOperationException("unsupported lavalink opcode: " + op);
 		}
-		if (event != null) {
-			vertx.eventBus().publish(recvAddress, event);
-		}
+		vertx.eventBus().publish(recvAddress, event);
 	}
 
 	@CheckReturnValue
