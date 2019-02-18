@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletionStage;
@@ -51,6 +52,9 @@ public class LavaPlayerImpl implements LavaPlayer {
 	private AudioTrack playingTrack;
 	private AudioNodeImpl connectedNode;
 	private String guildIdString;
+	private String lastSessionId;
+	private String lastVoiceToken;
+	private String lastEndpoint;
 
 	@Nonnull
 	@SuppressWarnings("deprecation") // we're not using vert.x 4, no need to worry on 3.6.2
@@ -99,13 +103,14 @@ public class LavaPlayerImpl implements LavaPlayer {
 	@Override
 	public void play(@Nonnull final String trackData, @Nonnegative final long startTime,
 	                 @Nonnegative final long endTime, final boolean noReplace) {
-			if (startTime < 0 || startTime >= endTime) {
-				LOGGER.warn("startTime out of bounds: {}, guild id: {}", startTime, guildIdAsString());
-				throw new IllegalArgumentException("startTime out of bounds!");
-			}
-			final var play = EntityBuilder.createPlayPayload(guildIdAsString(), trackData, String.valueOf(startTime),
-					String.valueOf(endTime), noReplace);
-			send(play);
+		connect(client.bestNode(), () -> initialize(lastSessionId, lastVoiceToken, lastEndpoint));
+		if (startTime < 0 || startTime >= endTime) {
+			LOGGER.warn("startTime out of bounds: {}, guild id: {}", startTime, guildIdAsString());
+			throw new IllegalArgumentException("startTime out of bounds!");
+		}
+		final var play = EntityBuilder.createPlayPayload(guildIdAsString(), trackData, String.valueOf(startTime),
+				String.valueOf(endTime), noReplace);
+		send(play);
 	}
 
 	@Override
@@ -164,11 +169,17 @@ public class LavaPlayerImpl implements LavaPlayer {
 	}
 
 	@Override
-	public void connect(@Nonnull final AudioNode node) {
+	public void connect(@Nonnull final AudioNode node, @Nullable final Runnable runnable) {
+		if (node.equals(connectedNode)) {
+			return;
+		}
 		if (connectedNode == null) {
 			node.openConnection(() -> {
 				connectedNode = (AudioNodeImpl) node;
 				state = PlayerState.CONNECTED;
+				if (runnable != null) {
+					runnable.run();
+				}
 			});
 			return;
 		}
@@ -178,6 +189,9 @@ public class LavaPlayerImpl implements LavaPlayer {
 		connectedNode.closeConnection(() -> node.openConnection(() -> {
 			connectedNode = (AudioNodeImpl) node;
 			state = PlayerState.CONNECTED;
+			if (runnable != null) {
+				runnable.run();
+			}
 		}));
 	}
 
@@ -188,6 +202,9 @@ public class LavaPlayerImpl implements LavaPlayer {
 			LOGGER.warn("player already initialized! guild id: {}", guildIdAsString());
 			throw new IllegalStateException("player already initialized!");
 		}
+		lastSessionId = sessionId;
+		lastVoiceToken = voiceToken;
+		lastEndpoint = endpoint;
 		state = PlayerState.INITIALIZED;
 		final var init = EntityBuilder.createVoiceUpdatePayload(guildIdAsString(), sessionId, voiceToken, endpoint);
 		send(init);

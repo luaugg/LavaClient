@@ -43,6 +43,18 @@ public interface LavaPlayer {
     PlayerState state();
 
     @CheckReturnValue
+    @Nullable
+    String lastSessionId();
+
+    @CheckReturnValue
+    @Nullable
+    String lastVoiceToken();
+
+    @CheckReturnValue
+    @Nullable
+    String lastEndpoint();
+
+    @CheckReturnValue
     @Nonnegative
     long guildId();
 
@@ -80,10 +92,14 @@ public interface LavaPlayer {
 
 	void volume(@Nonnegative final int volume);
 
-	void connect(@Nonnull final AudioNode node);
+	void connect(@Nonnull final AudioNode node, @Nullable final Runnable runnable);
 
 	void initialize(@Nonnull final String sessionId, @Nonnull final String voiceToken,
 	                @Nonnull final String endpoint);
+
+	default void connect(@Nonnull final AudioNode node) {
+		connect(node, null);
+	}
 
 	default void play(@Nonnull final AudioTrack track, @Nonnegative final long startTime,
 	                  @Nonnegative final long endTime, final boolean noReplace) {
