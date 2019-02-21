@@ -250,7 +250,7 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 	private LavalinkEvent eventFromRawPlayerUpdate(@Nonnull final JsonObject playerUpdate) {
 		final var player = playerFromRawData(playerUpdate);
 		final var state = playerUpdate.getJsonObject("state");
-		final var timestamp = state.getLong("timestamp");
+		final var timestamp = state.getLong("time");
 		final var position = state.getLong("position");
 		if (position != null) {
 			player.position(position);
