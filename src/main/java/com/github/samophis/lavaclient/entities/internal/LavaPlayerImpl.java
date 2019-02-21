@@ -132,7 +132,7 @@ public class LavaPlayerImpl implements LavaPlayer {
 				LOGGER.warn("startTime out of bounds: {}, guild id: {}", startTime, guildIdAsString());
 				throw new IllegalArgumentException("startTime out of bounds!");
 			}
-			final var play = EntityBuilder.createPlayPayload(guildIdAsString(), trackData,startTime, endTime, noReplace);
+			final var play = EntityBuilder.createPlayPayload(guildIdAsString(), trackData, startTime, endTime, noReplace);
 			send(play);
 		});
 	}
