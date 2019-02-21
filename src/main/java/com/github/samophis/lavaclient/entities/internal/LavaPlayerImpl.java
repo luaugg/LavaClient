@@ -116,25 +116,12 @@ public class LavaPlayerImpl implements LavaPlayer {
 	@Override
 	public void play(@Nonnull final String trackData, @Nonnegative final long startTime,
 	                 @Nonnegative final long endTime, final boolean noReplace) {
-		final var node = client.bestNode();
-		if (node.equals(connectedNode)) {
-			if (startTime < 0 || startTime >= endTime) {
-				LOGGER.warn("startTime out of bounds: {}, guild id: {}", startTime, guildIdAsString());
-				throw new IllegalArgumentException("startTime out of bounds!");
-			}
-			final var play = EntityBuilder.createPlayPayload(guildIdAsString(), trackData,startTime, endTime, noReplace);
-			send(play);
-			return;
+		if (startTime < 0 || startTime >= endTime) {
+			LOGGER.warn("startTime out of bounds: {}, guild id: {}", startTime, guildIdAsString());
+			throw new IllegalArgumentException("startTime out of bounds!");
 		}
-		connect(node, () -> {
-			initialize(lastSessionId, lastVoiceToken, lastEndpoint);
-			if (startTime < 0 || startTime >= endTime) {
-				LOGGER.warn("startTime out of bounds: {}, guild id: {}", startTime, guildIdAsString());
-				throw new IllegalArgumentException("startTime out of bounds!");
-			}
-			final var play = EntityBuilder.createPlayPayload(guildIdAsString(), trackData, startTime, endTime, noReplace);
-			send(play);
-		});
+		final var play = EntityBuilder.createPlayPayload(guildIdAsString(), trackData, startTime, endTime, noReplace);
+		send(play);
 	}
 
 	@Override
