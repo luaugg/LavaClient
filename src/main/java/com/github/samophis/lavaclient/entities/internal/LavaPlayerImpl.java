@@ -16,9 +16,11 @@
 package com.github.samophis.lavaclient.entities.internal;
 
 import com.github.samophis.lavaclient.entities.*;
+import com.github.samophis.lavaclient.exceptions.HttpTrackException;
 import com.github.samophis.lavaclient.util.AudioTrackUtil;
 import com.github.samophis.lavaclient.util.EntityBuilder;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -61,10 +63,22 @@ public class LavaPlayerImpl implements LavaPlayer {
 	@Override
 	public CompletionStage<AudioLoadResult> loadTracksAsync(@Nonnull final String identifier) {
 		final var future = new VertxCompletableFuture<AudioLoadResult>(client.vertx());
-		final var request = client.httpClient().get(String.format("%s/loadtracks?identifier=%s", connectedNode.restUrl(),
-				URLEncoder.encode(identifier, StandardCharsets.UTF_8)), response -> {
-			response.bodyHandler(buffer -> {
-				final var json = buffer.toJsonObject();
+		final var path = String.format("/loadtracks?identifier=%s", URLEncoder.encode(identifier,
+				StandardCharsets.UTF_8));
+		final var request = client.client().request(HttpMethod.GET, connectedNode.port(), connectedNode.baseUrl(), path);
+		if (!connectedNode.password().isEmpty()) {
+			request.putHeader("Authorization", connectedNode.password());
+		}
+		request.send(result -> {
+			if (result.succeeded()) {
+				final var response = result.result();
+				if (response.statusCode() != 200) {
+					LOGGER.warn("status code: {}, audio failed to load!", response.statusCode());
+					future.completeExceptionally(new HttpTrackException("failed to load audio!", response.statusCode(),
+							response.statusMessage()));
+					return;
+				}
+				final var json = response.bodyAsJsonObject();
 				final var type = LoadType.from(json.getString("loadType"));
 				final var playlistInfo = json.getJsonObject("playlistInfo");
 				final var isPlaylist = !playlistInfo.isEmpty();
@@ -81,12 +95,11 @@ public class LavaPlayerImpl implements LavaPlayer {
 					selectedTrack = playlistInfo.getInteger("selectedTrack");
 				}
 				future.complete(new AudioLoadResultImpl(tracks, type, playlistName, selectedTrack, isPlaylist));
-			});
-			response.request().end();
+			} else {
+				LOGGER.error("error executing http request!", result.cause());
+				future.completeExceptionally(result.cause());
+			}
 		});
-		if (!connectedNode.password().isEmpty()) {
-			request.putHeader("Authorization", connectedNode.password());
-		}
 		return future;
 	}
 
@@ -103,14 +116,25 @@ public class LavaPlayerImpl implements LavaPlayer {
 	@Override
 	public void play(@Nonnull final String trackData, @Nonnegative final long startTime,
 	                 @Nonnegative final long endTime, final boolean noReplace) {
-		connect(client.bestNode(), () -> initialize(lastSessionId, lastVoiceToken, lastEndpoint));
-		if (startTime < 0 || startTime >= endTime) {
-			LOGGER.warn("startTime out of bounds: {}, guild id: {}", startTime, guildIdAsString());
-			throw new IllegalArgumentException("startTime out of bounds!");
+		final var node = client.bestNode();
+		if (node.equals(connectedNode)) {
+			if (startTime < 0 || startTime >= endTime) {
+				LOGGER.warn("startTime out of bounds: {}, guild id: {}", startTime, guildIdAsString());
+				throw new IllegalArgumentException("startTime out of bounds!");
+			}
+			final var play = EntityBuilder.createPlayPayload(guildIdAsString(), trackData,startTime, endTime, noReplace);
+			send(play);
+			return;
 		}
-		final var play = EntityBuilder.createPlayPayload(guildIdAsString(), trackData, String.valueOf(startTime),
-				String.valueOf(endTime), noReplace);
-		send(play);
+		connect(node, () -> {
+			initialize(lastSessionId, lastVoiceToken, lastEndpoint);
+			if (startTime < 0 || startTime >= endTime) {
+				LOGGER.warn("startTime out of bounds: {}, guild id: {}", startTime, guildIdAsString());
+				throw new IllegalArgumentException("startTime out of bounds!");
+			}
+			final var play = EntityBuilder.createPlayPayload(guildIdAsString(), trackData,startTime, endTime, noReplace);
+			send(play);
+		});
 	}
 
 	@Override
@@ -173,26 +197,24 @@ public class LavaPlayerImpl implements LavaPlayer {
 		if (node.equals(connectedNode)) {
 			return;
 		}
-		if (connectedNode == null) {
+		if (state != PlayerState.DESTROYED && connectedNode != null) {
+			destroy();
+		}
+		if (!node.available()) {
 			node.openConnection(() -> {
-				connectedNode = (AudioNodeImpl) node;
 				state = PlayerState.CONNECTED;
+				connectedNode = (AudioNodeImpl) node;
 				if (runnable != null) {
 					runnable.run();
 				}
 			});
 			return;
 		}
-		if (state == PlayerState.INITIALIZED) {
-			destroy();
+		connectedNode = (AudioNodeImpl) node;
+		state = PlayerState.CONNECTED;
+		if (runnable != null) {
+			runnable.run();
 		}
-		connectedNode.closeConnection(() -> node.openConnection(() -> {
-			connectedNode = (AudioNodeImpl) node;
-			state = PlayerState.CONNECTED;
-			if (runnable != null) {
-				runnable.run();
-			}
-		}));
 	}
 
 	@Override

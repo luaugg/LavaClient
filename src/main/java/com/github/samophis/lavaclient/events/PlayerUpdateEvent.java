@@ -33,10 +33,10 @@ public class PlayerUpdateEvent implements LavalinkEvent {
 	@Getter(onMethod_ = {@CheckReturnValue, @Nonnull})
 	private final LavaPlayer player;
 
-	@Getter(onMethod_ = {@CheckReturnValue, @Nonnegative})
-	private final long timestamp;
-	@Getter(onMethod_ = {@CheckReturnValue, @Nonnegative})
-	private final long position;
+	@Getter(onMethod_ = {@CheckReturnValue, @Nonnull, @Nonnegative})
+	private final Long timestamp;
+	@Getter(onMethod_ = {@CheckReturnValue, @Nonnull, @Nonnegative})
+	private final Long position;
 
 	@Getter
 	private final EventType<PlayerUpdateEvent> type = EventType.PLAYER_UPDATE_EVENT;

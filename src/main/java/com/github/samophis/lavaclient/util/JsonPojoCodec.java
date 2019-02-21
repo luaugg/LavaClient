@@ -19,9 +19,10 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+
+import javax.annotation.Nonnull;
 
 /*
 Credit to catnip development team: https://github.com/mewna/catnip/blob/master/src/main/java/com/mewna/catnip/util/JsonPojoCodec.java
@@ -29,12 +30,17 @@ Credit to catnip development team: https://github.com/mewna/catnip/blob/master/s
 
 @Getter
 @Setter
-@RequiredArgsConstructor
 @Accessors(fluent = true)
 public class JsonPojoCodec<T> implements MessageCodec<T, T> {
 	private final Class<T> type;
-	private final byte systemCodecID = -1;
-	private final String name = "JsonPojoCodec";
+	private final byte systemCodecID;
+	private final String name;
+
+	public JsonPojoCodec(@Nonnull final Class<T> type) {
+		this.type = type;
+		systemCodecID = -1;
+		name = "JsonPojoCodec" + type.getName();
+	}
 
 	@Override
 	public void encodeToWire(final Buffer buffer, final T t) {

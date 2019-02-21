@@ -18,6 +18,7 @@ import javax.annotation.Nullable;
 public class AudioNodeOptions {
 	private String password;
 	private String host;
+	private String relativePath;
 
 	@Setter(onMethod_ = {@CheckReturnValue, @Nonnull}, onParam_ = @Nonnegative)
 	private int port;

@@ -23,8 +23,8 @@ import com.github.samophis.lavaclient.events.*;
 import com.github.samophis.lavaclient.util.JsonPojoCodec;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClient;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.WebClient;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -47,7 +47,7 @@ public class LavaClientImpl implements LavaClient {
 	private final TLongObjectHashMap<LavaPlayer> players;
 	private final long userId;
 	private final int numShards;
-	private final HttpClient httpClient;
+	private final WebClient client;
 
 	public LavaClientImpl(final Vertx vertx, final List<AudioNode> nodes,
 	                      final TLongObjectHashMap<LavaPlayer> players, final long userId, final int numShards) {
@@ -56,7 +56,7 @@ public class LavaClientImpl implements LavaClient {
 		this.players = players;
 		this.userId = userId;
 		this.numShards = numShards;
-		httpClient = vertx.createHttpClient();
+		client = WebClient.create(vertx);
 		register(JsonObject.class);
 		register(TrackStartEvent.class);
 		register(TrackEndEvent.class);
@@ -67,6 +67,7 @@ public class LavaClientImpl implements LavaClient {
 		register(PlayerUpdateEvent.class);
 		register(StatsUpdateEvent.class);
 		register(WebSocketClosedEvent.class);
+		register(AudioNodeImpl.ControlMessage.class);
 	}
 
 	private <T> void register(@Nonnull final Class<T> cls) {
@@ -136,7 +137,8 @@ public class LavaClientImpl implements LavaClient {
 	@Nonnull
 	@Override
 	public AudioNode bestNode() {
-		var currentPenalty = Integer.MAX_VALUE - 1;
+		// https://github.com/natanbc/andesite-node/issues/1
+		var currentPenalty = Integer.MAX_VALUE; // in the odd case that no stats updates have been received.
 		var node = (AudioNode) null;
 		for (final var nd : nodes) {
 			if (!nd.available()) {
@@ -149,6 +151,10 @@ public class LavaClientImpl implements LavaClient {
 			}
 		}
 		if (node == null) {
+			LOGGER.warn("no nodes could be found!");
+			throw new IllegalStateException("no nodes could be found!");
+		}
+		if (!node.available()) {
 			LOGGER.warn("no available nodes could be found!");
 			throw new IllegalStateException("no available nodes could be found!");
 		}
@@ -178,6 +184,7 @@ public class LavaClientImpl implements LavaClient {
 			vertx.undeploy(impl.deploymentID());
 			nodes.remove(node);
 		});
+		client.close();
 		vertx.close();
 	}
 
@@ -196,6 +203,6 @@ public class LavaClientImpl implements LavaClient {
 		if (port <= 0) {
 			throw new IllegalArgumentException("port is smaller or equal to 0");
 		}
-		return new AudioNodeImpl(this, host, password, port);
+		return new AudioNodeImpl(this, host, options.relativePath(), password, port);
 	}
 }

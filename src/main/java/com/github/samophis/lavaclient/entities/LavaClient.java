@@ -15,12 +15,16 @@
  */
 package com.github.samophis.lavaclient.entities;
 
+import com.github.samophis.lavaclient.entities.internal.LavaClientImpl;
+import gnu.trove.map.hash.TLongObjectHashMap;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 
 @SuppressWarnings("unused")
@@ -81,5 +85,23 @@ public interface LavaClient {
 	@Nonnull
 	default LavaPlayer removePlayer(@Nonnegative final long guildId) {
 		return removePlayer(guildId, true);
+	}
+
+	@CheckReturnValue
+	@Nonnull
+	static LavaClient from(@Nonnull final LavaClientOptions options) {
+		final var vertxOptions = options.vertxOptions() == null
+				? new VertxOptions()
+				: options.vertxOptions();
+		final var userId = options.userId();
+		if (userId <= 0) {
+			throw new IllegalArgumentException("user id cannot be smaller than or equal to 0");
+		}
+		final var shardCount = options.shardCount();
+		if (shardCount <= 0) {
+			throw new IllegalArgumentException("shard count cannot be smaller than or equal to 0");
+		}
+		return new LavaClientImpl(Vertx.vertx(vertxOptions), new ArrayList<>(), new TLongObjectHashMap<>(), userId,
+				shardCount);
 	}
 }

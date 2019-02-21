@@ -42,6 +42,10 @@ public interface AudioNode {
 	@CheckReturnValue
 	String baseUrl();
 
+	@Nullable
+	@CheckReturnValue
+	String relativePath();
+
 	@Nonnull
 	@CheckReturnValue
 	String websocketUrl();

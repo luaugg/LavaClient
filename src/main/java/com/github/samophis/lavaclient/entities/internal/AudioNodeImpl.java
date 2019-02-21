@@ -47,6 +47,7 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AudioNodeImpl.class);
 	@Getter private final LavaClient client;
 	@Getter private final String baseUrl;
+	@Getter private final String relativePath;
 	@Getter private final String password;
 	@Getter private final int port;
 	@Getter private final String websocketUrl;
@@ -64,12 +65,14 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 	private List<MessageConsumer<?>> consumers;
 
 	AudioNodeImpl(@Nonnull final LavaClient client, @Nonnull final String baseUrl,
-	                     @Nonnull final String password, @Nonnegative final int port) {
+	              @Nullable final String relativePath, @Nonnull final String password,
+	              @Nonnegative final int port) {
 		this.client = client;
 		this.baseUrl = baseUrl;
+		this.relativePath = relativePath;
 		this.password = password;
 		this.port = port;
-		websocketUrl = String.format("ws://%s:%d", baseUrl, port);
+		websocketUrl = String.format("ws://%s:%d%s", baseUrl, port, relativePath != null ? "/" + relativePath : "");
 		restUrl = String.format("http://%s:%d", baseUrl, port);
 		loadBalancer = new LoadBalancerImpl(this);
 		controlAddress = controlMessageAddress();
@@ -148,6 +151,7 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 					}
 					socket.textMessageHandler(this::handleReceivedMessage);
 				}, err -> LOGGER.error("Error establishing a WebSocket connection! {}", err));
+				break;
 			case DISCONNECT:
 				final var onDisconnect = (Runnable) message.object;
 				if (socket == null) {
@@ -248,8 +252,12 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 		final var state = playerUpdate.getJsonObject("state");
 		final var timestamp = state.getLong("timestamp");
 		final var position = state.getLong("position");
-		player.position(position);
-		player.timestamp(timestamp);
+		if (position != null) {
+			player.position(position);
+		}
+		if (timestamp != null) {
+			player.timestamp(timestamp);
+		}
 		return new PlayerUpdateEvent(this, player, timestamp, position);
 	}
 
@@ -286,7 +294,7 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 
 	private void handleReceivedMessage(@Nonnull final String msg) {
 		final var json = new JsonObject(msg);
-		final var op = json.getString("op");
+		final var op = json.getString("op", "unknown");
 		var event = (LavalinkEvent) null;
 		switch (op) {
 			case "stats":
@@ -298,9 +306,11 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 			case "event":
 				event = eventFromRawLavalinkEvent(json);
 				break;
+			case "unknown":
+				LOGGER.warn("json payload has no opcode! {}", json.toString());
+				break;
 			default:
 				LOGGER.warn("unsupported lavalink opcode! {}", op);
-				throw new UnsupportedOperationException("unsupported lavalink opcode: " + op);
 		}
 		vertx.eventBus().publish(recvAddress, event);
 	}
@@ -331,7 +341,7 @@ public class AudioNodeImpl extends AbstractVerticle implements AudioNode {
 		});
 	}
 
-	private class ControlMessage<V> {
+	class ControlMessage<V> {
 		private final ControlKey key;
 		private final V object;
 		private ControlMessage(final ControlKey key, final V object) {

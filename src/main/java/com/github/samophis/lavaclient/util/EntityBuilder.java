@@ -19,7 +19,6 @@ import io.vertx.core.json.JsonObject;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public class EntityBuilder {
 	private EntityBuilder() {}
@@ -71,17 +70,15 @@ public class EntityBuilder {
 	}
 
 	public static JsonObject createPlayPayload(@Nonnull final String guildId, @Nonnull final String track,
-	                                           @Nullable final String startTime, @Nullable final String endTime,
+	                                           @Nonnegative final long startTime, @Nonnegative final long endTime,
 	                                           final boolean noReplace) {
 		var object = new JsonObject()
 				.put("guildId", guildId)
 				.put("track", track)
 				.put("op", "play")
-				.put("noReplace", noReplace);
-		if (startTime != null) {
-			object.put("startTime", startTime);
-		}
-		if (endTime != null) {
+				.put("noReplace", noReplace)
+				.put("startTime", startTime);
+		if (endTime > 0) {
 			object.put("endTime", endTime);
 		}
 		return object;
