@@ -195,7 +195,7 @@ public class LavaClientImpl implements LavaClient {
 		if (host == null) {
 			throw new IllegalArgumentException("host/address is null!");
 		}
-		var password = options.host();
+		var password = options.password();
 		if (password == null) {
 			password = "";
 		}
