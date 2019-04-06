@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
 @Getter(onMethod_ = {@CheckReturnValue, @Nonnull})
 @Accessors(fluent = true)
 @RequiredArgsConstructor
-public class PlayerPauseEvent implements LavalinkEvent {
+public class PlayerPauseEvent implements LavalinkPlayerEvent {
 	private final AudioNode node;
 	private final LavaPlayer player;
 	private final EventType<PlayerPauseEvent> type = EventType.PLAYER_PAUSE_EVENT;
