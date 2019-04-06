@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
 
 @Accessors(fluent = true)
 @RequiredArgsConstructor
-public class PlayerUpdateEvent implements LavalinkEvent {
+public class PlayerUpdateEvent implements LavalinkPlayerEvent {
 	@Getter(onMethod_ = {@CheckReturnValue, @Nonnull})
 	private final AudioNode node;
 	@Getter(onMethod_ = {@CheckReturnValue, @Nonnull})
